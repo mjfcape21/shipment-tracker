@@ -1,20 +1,34 @@
 const path = require('path');
 const fs   = require('fs');
 
-const DB_DIR  = path.join(__dirname, '../data');
+const DB_DIR  = process.env.DATA_DIR || path.join(__dirname, '../data');
 const DB_PATH = path.join(DB_DIR, 'tracker.json');
 
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+console.log('[db] Data directory:', DB_DIR);
+console.log('[db] Data file:', DB_PATH);
 
-let store = { accounts: [], shipments: [], subscriptions: [] };
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+  console.log('[db] Created data directory');
+} else {
+  console.log('[db] Data directory already exists');
+}
+
+let store = { accounts: [], shipments: [], subscriptions: [], projects: [], deletedProjects: [], ignoredPOs: [] };
 
 function load() {
   try {
     if (fs.existsSync(DB_PATH)) {
-      store = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-      store.accounts      = store.accounts      || [];
-      store.shipments     = store.shipments     || [];
-      store.subscriptions = store.subscriptions || [];
+      const raw = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+      store.accounts        = raw.accounts        || [];
+      store.shipments       = raw.shipments       || [];
+      store.subscriptions   = raw.subscriptions   || [];
+      store.projects        = raw.projects        || [];
+      store.deletedProjects = raw.deletedProjects || [];
+      store.ignoredPOs      = raw.ignoredPOs      || [];
+      console.log('[db] Loaded:', store.accounts.length, 'accounts,', store.shipments.length, 'shipments,', store.projects.length, 'projects');
+    } else {
+      console.log('[db] No existing data file, starting fresh');
     }
   } catch (e) { console.error('[db] Load error:', e.message); }
 }
@@ -29,6 +43,7 @@ load();
 // ── Accounts ──────────────────────────────────────────────────────────────────
 function getAccounts() { return store.accounts; }
 function getAccount(email) { return store.accounts.find(a => a.email === email) || null; }
+
 function upsertAccount(email, tokens) {
   const idx = store.accounts.findIndex(a => a.email === email);
   const now = Math.floor(Date.now() / 1000);
@@ -44,10 +59,12 @@ function upsertAccount(email, tokens) {
   }
   save();
 }
+
 function updateLastScanned(email) {
   const acc = store.accounts.find(a => a.email === email);
   if (acc) { acc.last_scanned = Math.floor(Date.now() / 1000); save(); }
 }
+
 function deleteAccount(email) {
   store.accounts = store.accounts.filter(a => a.email !== email);
   save();
@@ -97,50 +114,19 @@ function upsertShipment(data) {
   }
 }
 
-// Manual edit — updates tracking, PO, and description
 function editShipment(id, updates) {
   const s = store.shipments.find(s => s.id === id);
   if (!s) return null;
   if (updates.tracking_number !== undefined) s.tracking_number = updates.tracking_number;
   if (updates.po_number       !== undefined) s.po_number       = updates.po_number;
+  if (updates.order_number    !== undefined) s.order_number    = updates.order_number;
   if (updates.description     !== undefined) s.description     = updates.description;
+  if (updates.ship_to         !== undefined) s.ship_to         = updates.ship_to;
+  if (updates.status          !== undefined) s.status          = updates.status;
+  if (updates.received        !== undefined) s.received        = updates.received;
   s.updated_at = Math.floor(Date.now() / 1000);
   save();
   return s;
-}
-
-function getUnnotified() {
-  return store.shipments.filter(s =>
-    (s.status === 'shipped'   && !s.notified_shipped) ||
-    (s.status === 'delivered' && !s.notified_delivered)
-  );
-}
-function markNotified(id, type) {
-  const s = store.shipments.find(s => s.id === id);
-  if (s) { s[`notified_${type}`] = 1; save(); }
-}
-
-// ── Push subscriptions ────────────────────────────────────────────────────────
-function addSubscription(sub) {
-  const exists = store.subscriptions.find(s => s.endpoint === sub.endpoint);
-  if (!exists) { store.subscriptions.push(sub); save(); }
-}
-function getSubscriptions() { return store.subscriptions; }
-function deleteSubscription(endpoint) {
-  store.subscriptions = store.subscriptions.filter(s => s.endpoint !== endpoint);
-  save();
-}
-
-// ── Stats ─────────────────────────────────────────────────────────────────────
-function getStats() {
-  const s = store.shipments;
-  return {
-    total:      s.length,
-    delivered:  s.filter(x => x.status === 'delivered').length,
-    in_transit: s.filter(x => x.status === 'transit').length,
-    shipped:    s.filter(x => x.status === 'shipped').length,
-    pending:    s.filter(x => x.status === 'pending').length,
-  };
 }
 
 function deleteShipment(id) {
@@ -151,17 +137,6 @@ function deleteShipment(id) {
   return removed;
 }
 
-module.exports = {
-  getAccounts, getAccount, upsertAccount, updateLastScanned, deleteAccount,
-  getShipments, upsertShipment, editShipment, getUnnotified, markNotified,
-  addSubscription, getSubscriptions, deleteSubscription,
-  getStats,
-  deleteShipment,
-  getProjects, upsertProject, addProject, deleteProject, getDeletedProjects, assignShipmentToProject,
-  getIgnoredPOs, ignorePO,
-};
-
-// Purge delivered shipments older than N days
 function purgeOldDelivered(days = 30) {
   const cutoff = Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
   const before = store.shipments.length;
@@ -175,30 +150,53 @@ function purgeOldDelivered(days = 30) {
   return removed;
 }
 
-// Manual edit
-function editShipment(id, updates) {
-  const s = store.shipments.find(s => s.id === id);
-  if (!s) return null;
-  if (updates.tracking_number !== undefined) s.tracking_number = updates.tracking_number;
-  if (updates.po_number       !== undefined) s.po_number       = updates.po_number;
-  if (updates.description     !== undefined) s.description     = updates.description;
-  s.updated_at = Math.floor(Date.now() / 1000);
-  save();
-  return s;
+function getUnnotified() {
+  return store.shipments.filter(s =>
+    (s.status === 'shipped'   && !s.notified_shipped) ||
+    (s.status === 'delivered' && !s.notified_delivered)
+  );
 }
 
-module.exports.purgeOldDelivered = purgeOldDelivered;
-module.exports.editShipment = editShipment;
+function markNotified(id, type) {
+  const s = store.shipments.find(s => s.id === id);
+  if (s) { s[`notified_${type}`] = 1; save(); }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function getStats() {
+  const s = store.shipments;
+  return {
+    total:      s.length,
+    delivered:  s.filter(x => x.status === 'delivered').length,
+    in_transit: s.filter(x => x.status === 'transit').length,
+    shipped:    s.filter(x => x.status === 'shipped').length,
+    pending:    s.filter(x => x.status === 'pending').length,
+    received:   s.filter(x => x.received).length,
+  };
+}
+
+// ── Push subscriptions ────────────────────────────────────────────────────────
+function addSubscription(sub) {
+  const exists = store.subscriptions.find(s => s.endpoint === sub.endpoint);
+  if (!exists) { store.subscriptions.push(sub); save(); }
+}
+function getSubscriptions() { return store.subscriptions; }
+function deleteSubscription(endpoint) {
+  store.subscriptions = store.subscriptions.filter(s => s.endpoint !== endpoint);
+  save();
+}
 
 // ── Projects ──────────────────────────────────────────────────────────────────
-if (!store.projects) { store.projects = []; }
-
 function getProjects() { return store.projects; }
 
 function upsertProject(name) {
   const existing = store.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) return existing;
-  const project = { id: 'proj_' + Date.now() + '_' + Math.random().toString(36).substr(2,5), name, created_at: Math.floor(Date.now()/1000) };
+  const project = {
+    id: 'proj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+    name,
+    created_at: Math.floor(Date.now() / 1000),
+  };
   store.projects.push(project);
   save();
   return project;
@@ -209,18 +207,9 @@ function addProject(name) {
   return upsertProject(name.trim());
 }
 
-
-// ── Deleted projects blocklist ────────────────────────────────────────────────
-if (!store.deletedProjects) { store.deletedProjects = []; }
-if (!store.ignoredPOs) { store.ignoredPOs = []; }
-
-function getDeletedProjects() { return store.deletedProjects || []; }
-
 function deleteProject(id) {
   const proj = store.projects.find(p => p.id === id);
   if (proj) {
-    // Add to deleted blocklist so auto-create doesn't bring it back
-    if (!store.deletedProjects) store.deletedProjects = [];
     const nameLower = proj.name.toLowerCase().trim();
     if (!store.deletedProjects.includes(nameLower)) {
       store.deletedProjects.push(nameLower);
@@ -231,19 +220,6 @@ function deleteProject(id) {
   save();
 }
 
-function getIgnoredPOs() {
-  return store.ignoredPOs || [];
-}
-
-function ignorePO(po) {
-  if (!store.ignoredPOs) store.ignoredPOs = [];
-  const poLower = po.toLowerCase().trim();
-  if (!store.ignoredPOs.includes(poLower)) {
-    store.ignoredPOs.push(poLower);
-    save();
-  }
-}
-
 function renameProject(id, newName) {
   const proj = store.projects.find(p => p.id === id);
   if (!proj) return null;
@@ -252,8 +228,7 @@ function renameProject(id, newName) {
   return proj;
 }
 
-module.exports.renameProject = renameProject;
-module.exports.getDeletedProjects = getDeletedProjects;
+function getDeletedProjects() { return store.deletedProjects; }
 
 function assignShipmentToProject(shipmentId, projectId) {
   const s = store.shipments.find(s => s.id === shipmentId);
@@ -263,4 +238,25 @@ function assignShipmentToProject(shipmentId, projectId) {
   return s;
 }
 
-module.exports.assignShipmentToProject = assignShipmentToProject;
+// ── Ignored POs ───────────────────────────────────────────────────────────────
+function getIgnoredPOs() { return store.ignoredPOs; }
+
+function ignorePO(po) {
+  const poLower = po.toLowerCase().trim();
+  if (!store.ignoredPOs.includes(poLower)) {
+    store.ignoredPOs.push(poLower);
+    save();
+  }
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+module.exports = {
+  getAccounts, getAccount, upsertAccount, updateLastScanned, deleteAccount,
+  getShipments, upsertShipment, editShipment, deleteShipment, purgeOldDelivered,
+  getUnnotified, markNotified,
+  addSubscription, getSubscriptions, deleteSubscription,
+  getStats,
+  getProjects, upsertProject, addProject, deleteProject, renameProject,
+  getDeletedProjects, assignShipmentToProject,
+  getIgnoredPOs, ignorePO,
+};

@@ -113,8 +113,11 @@ app.delete('/api/shipments/:id', (req, res) => {
 
 app.patch('/api/shipments/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const { tracking_number, po_number, description } = req.body;
-  const result = db.editShipment(id, { tracking_number, po_number, description });
+  const { tracking_number, po_number, order_number, description, ship_to, status, received } = req.body;
+  const updates = { tracking_number, po_number, order_number, description, ship_to };
+  if (status !== undefined) updates.status = status;
+  if (received !== undefined) updates.received = received;
+  const result = db.editShipment(id, updates);
   if (!result) return res.status(404).json({ error: 'Not found' });
   res.json(result);
 });
