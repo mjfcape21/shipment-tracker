@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matt's Shipment Tracker</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">📦 Matt's Tracker</div>
+
+      <div class="search-wrap">
+        <span class="search-icon" style="font-size:13px;">&#128269;</span>
+        <input type="text" id="search-input" placeholder="Search shipments..." oninput="applyFilters()">
+      </div>
+
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('calendar',this)">Calendar</button>
+        <button class="view-btn" onclick="setView('list',this)">List</button>
+        <button class="view-btn" onclick="setView('projects',this)">Projects</button>
+      </div>
+
+      <div class="sort-row">
+        <span class="sort-label">Arrival date</span>
+        <button class="sort-btn" id="sort-asc" onclick="setSort('asc',this)">Asc</button>
+        <button class="sort-btn active" id="sort-desc" onclick="setSort('desc',this)">Desc</button>
+      </div>
+
+      <div class="section-label" onclick="toggleSection('status-section')">
+        Status <span class="section-toggle" id="status-toggle">▾</span>
+      </div>
+      <div class="section-content" id="status-section">
+        <nav class="filters">
+          <button class="filter-item active" data-filter="all" onclick="setFilter('all',this)"><span class="filter-dot"></span>All packages<span class="filter-count" id="count-all">-</span></button>
+          <button class="filter-item" data-filter="transit" onclick="setFilter('transit',this)"><span class="filter-dot transit"></span>In transit<span class="filter-count" id="count-transit">-</span></button>
+          <button class="filter-item" data-filter="shipped" onclick="setFilter('shipped',this)"><span class="filter-dot shipped"></span>Shipped<span class="filter-count" id="count-shipped">-</span></button>
+          <button class="filter-item" data-filter="delivered" onclick="setFilter('delivered',this)"><span class="filter-dot delivered"></span>Delivered<span class="filter-count" id="count-delivered">-</span></button>
+          <button class="filter-item" data-filter="received" onclick="setFilter('received',this)"><span class="filter-dot delivered"></span>Received<span class="filter-count" id="count-received">-</span></button>
+        </nav>
+      </div>
+
+      <div class="section-label" onclick="toggleSection('projects-section')">
+        Projects <button class="add-vendor-btn" onclick="event.stopPropagation();showAddProject()">+</button>
+        <span class="section-toggle" id="projects-toggle">▾</span>
+      </div>
+      <div class="section-content" id="projects-section">
+        <nav class="filters" id="project-filters"></nav>
+        <div class="add-vendor-form" id="add-project-form" style="display:none;">
+          <input type="text" id="new-project-input" placeholder="Project name..." />
+          <div class="add-vendor-actions">
+            <button onclick="cancelAddProject()">Cancel</button>
+            <button class="btn-primary" onclick="saveNewProject()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label" onclick="toggleSection('vendors-section')">
+        Vendors <button class="add-vendor-btn" onclick="event.stopPropagation();showAddVendor()">+</button>
+        <span class="section-toggle" id="vendors-toggle">▾</span>
+      </div>
+      <div class="section-content" id="vendors-section">
+        <nav class="filters" id="vendor-filters"></nav>
+        <div class="add-vendor-form" id="add-vendor-form" style="display:none;">
+          <input type="text" id="new-vendor-input" placeholder="Vendor name..." />
+          <div class="add-vendor-actions">
+            <button onclick="cancelAddVendor()">Cancel</button>
+            <button class="btn-primary" onclick="saveNewVendor()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label" onclick="toggleSection('carriers-section')">
+        Carriers <span class="section-toggle" id="carriers-toggle">▾</span>
+      </div>
+      <div class="section-content" id="carriers-section">
+        <nav class="filters" id="carrier-filters"></nav>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="accounts-section">
+        <div class="section-label" style="cursor:default;">Connected accounts</div>
+        <div id="accounts-list"></div>
+        <a href="/auth/connect" class="connect-btn">+ Add email account</a>
+      </div>
+      <div class="actions">
+        <button class="scan-btn" id="scan-btn" onclick="triggerScan()"><span class="scan-icon">↻</span> Scan now</button>
+        <button class="notify-btn" id="notify-btn" onclick="toggleNotifications()">Enable notifications</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="main-header">
+      <div class="header-left">
+        <h1 id="page-title">All packages</h1>
+        <span class="last-scan" id="last-scan"></span>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-n" id="stat-total">-</span><span class="stat-l">Total</span></div>
+        <div class="stat"><span class="stat-n transit" id="stat-transit">-</span><span class="stat-l">In transit</span></div>
+        <div class="stat"><span class="stat-n delivered" id="stat-delivered">-</span><span class="stat-l">Delivered</span></div>
+      </div>
+    </header>
+    <div id="main-content"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- New vendor notification -->
+<div class="vendor-toast" id="vendor-toast" style="display:none;">
+  <div class="vendor-toast-title">New shipper found</div>
+  <div class="vendor-toast-body" id="vendor-toast-body"></div>
+  <div class="vendor-toast-actions">
+    <button class="vendor-toast-no" onclick="dismissVendorToast()">Ignore</button>
+    <button class="vendor-toast-yes" onclick="addVendorFromToast()">Add vendor</button>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="edit-modal" style="display:none;" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title">Edit shipment</div>
+    <div class="modal-field"><label>Description</label><input type="text" id="edit-desc" placeholder="Item description" /></div>
+    <div class="modal-field"><label>Tracking number</label><input type="text" id="edit-tracking" placeholder="e.g. 1Z999AA1..." /></div>
+    <div class="modal-field"><label>PO number</label><input type="text" id="edit-po" placeholder="e.g. Luongo" /></div>
+    <div class="modal-field"><label>Order number</label><input type="text" id="edit-order" placeholder="e.g. 12345678" /></div>
+    <div class="modal-field"><label>Ship to (name / project)</label><input type="text" id="edit-shipto" placeholder="e.g. Matt Frias - Luongo Residence" /></div>
+    <div class="modal-field"><label>Project</label>
+      <select id="edit-project"><option value="">No project</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="modal-save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-nav">
+  <button class="mobile-nav-btn active" id="mnav-calendar" onclick="setMobileView('calendar',this)">
+    <span class="mobile-nav-icon">📅</span>
+    <span>Calendar</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-list" onclick="setMobileView('list',this)">
+    <span class="mobile-nav-icon">☰</span>
+    <span>List</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-projects" onclick="setMobileView('projects',this)">
+    <span class="mobile-nav-icon">📋</span>
+    <span>Projects</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-filter" onclick="toggleMobileFilter()">
+    <span class="mobile-nav-icon">⚙</span>
+    <span>Filter</span>
+  </button>
+</nav>
+
+<!-- Mobile FAB scan button -->
+<button class="mobile-scan-fab" id="mobile-scan-fab" onclick="triggerScan()" title="Scan now">↻</button>
+
+<!-- Mobile filter overlay -->
+<div class="mobile-filter-overlay" id="mobile-filter-overlay" onclick="closeMobileFilter()"></div>
+
+<!-- Mobile filter drawer -->
+<div class="mobile-filter-drawer" id="mobile-filter-drawer">
+  <div class="mobile-drawer-handle"></div>
+  <input class="mobile-search" type="text" placeholder="Search shipments..." oninput="applyFilters()" id="mobile-search-input">
+  <div class="mobile-drawer-title">Status</div>
+  <div class="mobile-filter-grid">
+    <button class="mobile-filter-chip active" onclick="setMobileFilter('all',this)">All</button>
+    <button class="mobile-filter-chip" onclick="setMobileFilter('transit',this)">In transit</button>
+    <button class="mobile-filter-chip" onclick="setMobileFilter('shipped',this)">Shipped</button>
+    <button class="mobile-filter-chip" onclick="setMobileFilter('delivered',this)">Delivered</button>
+    <button class="mobile-filter-chip" onclick="setMobileFilter('received',this)">Received</button>
+  </div>
+  <div class="mobile-drawer-title">Sort</div>
+  <div class="mobile-filter-grid">
+    <button class="mobile-filter-chip" onclick="setSort('desc',this);closeMobileFilter()">Newest first</button>
+    <button class="mobile-filter-chip" onclick="setSort('asc',this);closeMobileFilter()">Oldest first</button>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script src="/js/gmail-links.js"></script>
+</body>
+</html>
