@@ -35,6 +35,7 @@ function getOAuthClient() {
   );
 }
 
+app.get('/debug-env', (req, res) => { res.json({ clientId: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0,20) + '...' : 'NOT SET', appUrl: process.env.APP_URL || 'NOT SET' }); });
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 app.get('/auth/connect', (req, res) => {
