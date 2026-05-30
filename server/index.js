@@ -1,30 +1,30 @@
 require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);
+const express    = require('express');
+const session    = require('express-session');
+const pgSession  = require('connect-pg-simple')(session);
 const { google } = require('googleapis');
-const cron = require('node-cron');
-const path = require('path');
-const fs = require('fs');
+const cron       = require('node-cron');
+const path       = require('path');
 
 const db = require('./db');
 const { scanAllAccounts, scanAccount, buildOAuthClient } = require('./scanner');
 const { processNotifications } = require('./notifications');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
-
-const dataDir = path.join(__dirname, '../data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(session({
-  store: new FileStore({ path: dataDir, ttl: 30 * 24 * 60 * 60, retries: 1 }),
-  secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
-  resave: false,
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    tableName: 'sessions',
+    createTableIfMissing: true,
+  }),
+  secret:            process.env.SESSION_SECRET || 'dev-secret',
+  resave:            false,
   saveUninitialized: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
+  cookie:            { maxAge: 30 * 24 * 60 * 60 * 1000 },
 }));
 
 function getOAuthClient() {
@@ -35,12 +35,8 @@ function getOAuthClient() {
   );
 }
 
-app.get('/debug-env', (req, res) => { res.json({ clientId: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0,20) + '...' : 'NOT SET', appUrl: process.env.APP_URL || 'NOT SET' }); });
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
 app.get('/auth/connect', (req, res) => {
-  const oauth2Client = getOAuthClient();
-  const url = oauth2Client.generateAuthUrl({
+  const url = getOAuthClient().generateAuthUrl({
     access_type: 'offline', prompt: 'consent',
     scope: [
       'https://www.googleapis.com/auth/gmail.readonly',
@@ -55,18 +51,19 @@ app.get('/auth/callback', async (req, res) => {
   if (error) return res.redirect('/?error=' + encodeURIComponent(error));
   try {
     const oauth2Client = getOAuthClient();
-    const { tokens } = await oauth2Client.getToken(code);
+    const { tokens }   = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
-    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-    const { data } = await oauth2.userinfo.get();
-    const email = data.email;
-    db.upsertAccount(email, {
-      access_token: tokens.access_token,
+    const oauth2       = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const { data }     = await oauth2.userinfo.get();
+    const email        = data.email;
+    await db.upsertAccount(email, {
+      access_token:  tokens.access_token,
       refresh_token: tokens.refresh_token,
-      token_expiry: tokens.expiry_date,
+      token_expiry:  tokens.expiry_date,
     });
     console.log(`[auth] Connected: ${email}`);
-    scanAccount(db.getAccount(email)).then(() => processNotifications()).catch(console.error);
+    const account = await db.getAccount(email);
+    scanAccount(account).then(() => processNotifications()).catch(console.error);
     res.redirect('/?connected=' + encodeURIComponent(email));
   } catch (err) {
     console.error('[auth] Callback error:', err.message);
@@ -74,70 +71,67 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-app.post('/auth/disconnect', (req, res) => {
+app.post('/auth/disconnect', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
-  db.deleteAccount(email);
+  await db.deleteAccount(email);
   res.json({ ok: true });
 });
 
-// ── API ───────────────────────────────────────────────────────────────────────
-
-app.get('/api/accounts', (req, res) => {
-  res.json(db.getAccounts().map(a => ({ email: a.email, last_scanned: a.last_scanned })));
+app.get('/api/accounts', async (req, res) => {
+  const accounts = await db.getAccounts();
+  res.json(accounts.map(a => ({ email: a.email, last_scanned: a.last_scanned })));
 });
 
-app.get('/api/shipments', (req, res) => {
+app.get('/api/shipments', async (req, res) => {
   const SKIP = /^cannot be verified$|tommy bahama|print.*marketing|p13n-asin|xfinity/i;
   const { status, account } = req.query;
-  const all = db.getShipments({ status, account });
+  const all = await db.getShipments({ status, account });
   res.json(all.filter(s => !SKIP.test(s.description || '')));
 });
 
-app.get('/api/stats', (req, res) => {
-  res.json(db.getStats());
+app.get('/api/stats', async (req, res) => {
+  res.json(await db.getStats());
 });
 
-// Manual edit — tracking number, PO, description
-app.post('/api/shipments/:id/receive', (req, res) => {
+app.post('/api/shipments/:id/receive', async (req, res) => {
   const id = parseInt(req.params.id);
-  const result = db.editShipment(id, { received: true });
+  const result = await db.editShipment(id, { received: true });
   if (!result) return res.status(404).json({ error: 'Not found' });
   res.json(result);
 });
 
-app.delete('/api/shipments/:id', (req, res) => {
+app.delete('/api/shipments/:id', async (req, res) => {
   const id = parseInt(req.params.id);
-  const result = db.deleteShipment(id);
-  res.json({ ok: true, deleted: result });
+  await db.deleteShipment(id);
+  res.json({ ok: true });
 });
 
-app.patch('/api/shipments/:id', (req, res) => {
+app.patch('/api/shipments/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   const { tracking_number, po_number, order_number, description, ship_to, status, received } = req.body;
   const updates = { tracking_number, po_number, order_number, description, ship_to };
-  if (status !== undefined) updates.status = status;
+  if (status   !== undefined) updates.status   = status;
   if (received !== undefined) updates.received = received;
-  const result = db.editShipment(id, updates);
+  const result = await db.editShipment(id, updates);
   if (!result) return res.status(404).json({ error: 'Not found' });
   res.json(result);
 });
 
-// Web Push
 app.get('/api/vapid-public-key', (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC_KEY || null });
 });
 
-app.post('/api/push/subscribe', (req, res) => {
+app.post('/api/push/subscribe', async (req, res) => {
   const { endpoint, keys } = req.body;
   if (!endpoint || !keys) return res.status(400).json({ error: 'Invalid subscription' });
-  db.addSubscription({ endpoint, p256dh: keys.p256dh, auth: keys.auth });
+  await db.addSubscription({ endpoint, p256dh: keys.p256dh, auth: keys.auth });
   res.json({ ok: true });
 });
 
-app.post('/api/push/unsubscribe', (req, res) => {
+app.post('/api/push/unsubscribe', async (req, res) => {
   const { endpoint } = req.body;
-  db.deleteSubscription(endpoint);
+  await db.deleteSubscription(endpoint);
   res.json({ ok: true });
 });
 
@@ -146,116 +140,98 @@ app.post('/api/scan', async (req, res) => {
   try {
     await scanAllAccounts();
     await processNotifications();
-  } catch (err) {
-    console.error('[scan] Error:', err.message);
-  }
+  } catch (err) { console.error('[scan] Error:', err.message); }
 });
 
-// ── Scheduled tasks ───────────────────────────────────────────────────────────
-
-const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
-cron.schedule(cronSchedule, async () => {
-  console.log('[cron] Running scheduled scan...');
-  try {
-    await scanAllAccounts();
-    await processNotifications();
-  } catch (err) { console.error('[cron] Error:', err.message); }
-});
-
-// Purge delivered shipments older than 30 days — runs daily at midnight
-cron.schedule('0 0 * * *', () => {
-  console.log('[cron] Purging old delivered shipments...');
-  const count = db.purgeOldDelivered(30);
-  console.log(`[cron] Purged ${count} shipments`);
-});
-
-// ── Start ─────────────────────────────────────────────────────────────────────
-
-app.listen(PORT, () => {
-  console.log(`\n🚀 Shipment Tracker running at http://localhost:${PORT}`);
-  console.log(`📧 Scanning on schedule: ${cronSchedule}`);
-  console.log(`📊 Accounts connected: ${db.getAccounts().length}\n`);
-});
-
-// ── Project routes ────────────────────────────────────────────────────────────
-app.get('/api/projects', (req, res) => {
-  const projects = db.getProjects();
-  const shipments = db.getShipments();
-  // Attach stats to each project
+app.get('/api/projects', async (req, res) => {
+  const projects  = await db.getProjects();
+  const shipments = await db.getShipments();
   const result = projects.map(p => {
-    const pShipments = shipments.filter(s => s.project_id === p.id || (s.po_number && s.po_number.toLowerCase() === p.name.toLowerCase()));
-    return {
-      ...p,
-      total: pShipments.length,
-      delivered: pShipments.filter(s => s.status === 'delivered').length,
-      in_transit: pShipments.filter(s => s.status === 'transit').length,
-      shipped: pShipments.filter(s => s.status === 'shipped').length,
-      pending: pShipments.filter(s => s.status === 'pending').length,
-    };
+    const ps = shipments.filter(s =>
+      s.project_id === p.id ||
+      (s.po_number && s.po_number.toLowerCase() === p.name.toLowerCase())
+    );
+    return { ...p, total:ps.length, delivered:ps.filter(s=>s.status==='delivered').length,
+      in_transit:ps.filter(s=>s.status==='transit').length, shipped:ps.filter(s=>s.status==='shipped').length,
+      pending:ps.filter(s=>s.status==='pending').length };
   });
   res.json(result);
 });
 
-app.post('/api/projects', (req, res) => {
+app.post('/api/projects', async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
-  const project = db.addProject(name);
-  res.json(project);
+  res.json(await db.addProject(name));
 });
 
-app.patch('/api/projects/:id', (req, res) => {
+app.patch('/api/projects/:id', async (req, res) => {
   const id = decodeURIComponent(req.params.id);
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
-  const result = db.renameProject(id, name);
+  const result = await db.renameProject(id, name);
   if (!result) return res.status(404).json({ error: 'Not found' });
   res.json(result);
 });
 
-app.delete('/api/projects/:id', (req, res) => {
+app.delete('/api/projects/:id', async (req, res) => {
   const id = decodeURIComponent(req.params.id);
-  console.log('[project] Deleting:', id);
-  db.deleteProject(id);
+  await db.deleteProject(id);
   res.json({ ok: true });
 });
 
-app.post('/api/shipments/:id/assign', (req, res) => {
+app.post('/api/shipments/:id/assign', async (req, res) => {
   const id = parseInt(req.params.id);
   const { project_id } = req.body;
-  const result = db.assignShipmentToProject(id, project_id);
+  const result = await db.assignShipmentToProject(id, project_id);
   if (!result) return res.status(404).json({ error: 'Not found' });
   res.json(result);
 });
 
-// Auto-create projects from PO names in shipments
-app.post('/api/projects/auto-create', (req, res) => {
-  const shipments = db.getShipments();
-  const poNames = [...new Set(shipments.map(s => s.po_number).filter(Boolean))];
-  const existing = db.getProjects();
-  const deleted = db.getDeletedProjects();
-  const ignored = db.getIgnoredPOs();
+app.post('/api/projects/auto-create', async (req, res) => {
+  const shipments     = await db.getShipments();
+  const existing      = await db.getProjects();
+  const deleted       = await db.getDeletedProjects();
+  const ignored       = await db.getIgnoredPOs();
   const existingNames = existing.map(p => p.name.toLowerCase().trim());
-  
-  const pending = [];
-  const autoCreated = [];
-  
+  const poNames       = [...new Set(shipments.map(s => s.po_number).filter(Boolean))];
+  const pending       = [];
   poNames.forEach(po => {
     if (!po || po.length < 2) return;
     if (/^(old|new|number|none|na|n\/a|licies)$/i.test(po.trim())) return;
     const poLower = po.toLowerCase().trim();
-    if (deleted.includes(poLower)) return;
-    if (ignored.includes(poLower)) return;
-    if (existingNames.includes(poLower)) return;
-    // New PO found - add to pending for user review
+    if (deleted.includes(poLower) || ignored.includes(poLower) || existingNames.includes(poLower)) return;
     pending.push(po);
   });
-  
-  res.json({ pending, projects: db.getProjects() });
+  res.json({ pending, projects: await db.getProjects() });
 });
 
-app.post('/api/projects/ignore-po', (req, res) => {
+app.post('/api/projects/ignore-po', async (req, res) => {
   const { po } = req.body;
   if (!po) return res.status(400).json({ error: 'PO required' });
-  db.ignorePO(po);
+  await db.ignorePO(po);
   res.json({ ok: true });
+});
+
+const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
+cron.schedule(cronSchedule, async () => {
+  console.log('[cron] Running scheduled scan...');
+  try { await scanAllAccounts(); await processNotifications(); }
+  catch (err) { console.error('[cron] Error:', err.message); }
+});
+
+cron.schedule('0 0 * * *', async () => {
+  const count = await db.purgeOldDelivered(30);
+  if (count > 0) console.log(`[cron] Purged ${count} old delivered shipments`);
+});
+
+db.init().then(async () => {
+  const accounts = await db.getAccounts();
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Shipment Tracker running at http://localhost:${PORT}`);
+    console.log(`📧 Scanning on schedule: ${cronSchedule}`);
+    console.log(`📊 Accounts connected: ${accounts.length}\n`);
+  });
+}).catch(err => {
+  console.error('[startup] Failed to initialize database:', err.message);
+  process.exit(1);
 });
