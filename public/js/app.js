@@ -1,4 +1,5 @@
-﻿'use strict';
+﻿async function renameProject(id,currentName){var name=prompt('Rename project:',currentName);if(!name||!name.trim()||name.trim()===currentName)return;await api('/api/projects/'+id,{method:'PATCH',body:{name:name.trim()}});await loadProjects();applyFilters();showToast('Project renamed');}
+'use strict';
 let currentFilter='all',currentVendor='',currentCarrier='',currentProject='',currentView='calendar',currentSort='desc',allShipments=[],allGroups=[],allProjects=[],pushSubscription=null,editingId=null,pendingVendor=null;
 
 const DEFAULT_VENDORS=['ADI','Lutron','Savant','Sonance','Amazon','Ubiquiti','Snap AV','Snap One Partner Store','aspectLED','Super Bright LEDs','B&H Photo','My Cable Mart','FITUEYES','eBay'];
@@ -413,6 +414,7 @@ triggerScan=async function(){
   await origTriggerScan();
   if(fab)setTimeout(()=>fab.classList.remove('scanning'),5500);
 };
+
 
 
 
