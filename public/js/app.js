@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 let currentFilter='all',currentVendor='',currentCarrier='',currentProject='',currentView='calendar',currentSort='desc',allShipments=[],allGroups=[],allProjects=[],pushSubscription=null,editingId=null,pendingVendor=null;
 
 const DEFAULT_VENDORS=['ADI','Lutron','Savant','Sonance','Amazon','Ubiquiti','Snap AV','Snap One Partner Store','aspectLED','Super Bright LEDs','B&H Photo','My Cable Mart','FITUEYES','eBay'];
@@ -151,13 +151,13 @@ async function assignPendingPO(po,toast){
   }catch(e){showToast('Failed',true);}
 }
 
-// ── Section collapse ──────────────────────────────────────────────────────────
-function toggleSection(id){const el=document.getElementById(id);const isCollapsed=el.classList.toggle('collapsed');const toggle=document.getElementById(id.replace('-section','-toggle'));if(toggle)toggle.textContent=isCollapsed?'▸':'▾';}
+// â”€â”€ Section collapse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function toggleSection(id){const el=document.getElementById(id);const isCollapsed=el.classList.toggle('collapsed');const toggle=document.getElementById(id.replace('-section','-toggle'));if(toggle)toggle.textContent=isCollapsed?'â–¸':'â–¾';}
 
-// ── Search ────────────────────────────────────────────────────────────────────
+// â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getSearchQuery(){return(document.getElementById('search-input').value||'').toLowerCase().trim();}
 
-// ── Filtering ─────────────────────────────────────────────────────────────────
+// â”€â”€ Filtering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getFilteredGroups(){
   const q=getSearchQuery();
   let groups=[...allGroups];
@@ -172,7 +172,7 @@ function getFilteredGroups(){
 
 function applyFilters(){const groups=getFilteredGroups();if(currentView==='calendar')renderCalendar(groups);else if(currentView==='list')renderList(groups);else renderProjectsView();}
 
-// ── Calendar ──────────────────────────────────────────────────────────────────
+// â”€â”€ Calendar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderCalendar(groups){
   const content=document.getElementById('main-content');
   if(!groups.length){content.innerHTML=emptyHTML();return;}
@@ -201,10 +201,10 @@ function renderCalendar(groups){
   content.innerHTML=html;
 }
 
-// ── List ──────────────────────────────────────────────────────────────────────
+// â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderList(groups){const content=document.getElementById('main-content');if(!groups.length){content.innerHTML=emptyHTML();return;}const sorted=[...groups].sort((a,b)=>currentSort==='asc'?(a.best.email_date||0)-(b.best.email_date||0):(b.best.email_date||0)-(a.best.email_date||0));content.innerHTML='<div class="list-view">'+sorted.map(cardHTML).join('')+'</div>';}
 
-// ── Projects view ─────────────────────────────────────────────────────────────
+// â”€â”€ Projects view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderProjectsView(){
   const content=document.getElementById('main-content');
   const projects=currentProject?allProjects.filter(p=>p.id===currentProject):allProjects;
@@ -234,7 +234,7 @@ function renderProjectsView(){
 }
 function toggleProjectCard(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'flex':'none';}
 
-// ── Card ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function cardHTML(g){
   const s=g.best;
   const priority={delivered:4,transit:3,shipped:2,pending:1};
@@ -278,15 +278,21 @@ function cardHTML(g){
 
 function emptyHTML(){return'<div class="empty-state"><div class="empty-icon">&#128237;</div><p>No packages found</p>'+(currentFilter==='all'&&!currentVendor&&!currentCarrier&&!currentProject&&!getSearchQuery()?'<a href="/auth/connect" class="connect-btn-large">Add email account</a>':'')+'</div>';}
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+// â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function deleteShipment(id){if(!confirm('Remove this shipment?'))return;try{await api('/api/shipments/'+id,{method:'DELETE'});allShipments=allShipments.filter(s=>s.id!==id);allGroups=groupShipments(allShipments);applyFilters();loadStats();showToast('Removed');}catch(e){showToast('Failed',true);}}
 
 async function markReceived(id){try{await api('/api/shipments/'+id+'/receive',{method:'POST',body:{}});const group=allGroups.find(g=>g.shipments.some(s=>s.id===id));if(group){group.shipments.forEach(s=>{s.received=true;const idx=allShipments.findIndex(x=>x.id===s.id);if(idx>=0)allShipments[idx].received=true;});group.best.received=true;}allGroups=groupShipments(allShipments);applyFilters();const receivedCount=allShipments.filter(s=>s.received).length;document.getElementById('count-received').textContent=receivedCount;showToast('Marked as received!');}catch(e){showToast('Failed',true);}}
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+// â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function buildVendorSidebar(){const vendors=getVendors().slice().sort((a,b)=>a.localeCompare(b));const nav=document.getElementById('vendor-filters');nav.innerHTML='<button class="filter-item active-vendor" onclick="setVendor(\'\',this)"><span class="filter-dot vendor"></span>All vendors<span class="filter-count" id="vcount-all">-</span></button>'+vendors.map(v=>'<button class="filter-item" onclick="setVendor(\''+esc(v)+'\',this)"><span class="filter-dot vendor"></span>'+esc(v)+'<span class="filter-count" id="vcount-'+v.replace(/[\s&]/g,'_')+'">-</span></button>').join('');}
 function updateVendorCounts(){const vendors=getVendors();document.getElementById('vcount-all').textContent=allGroups.length;vendors.forEach(v=>{const count=allGroups.filter(g=>g.best._vendor===v).length;const el=document.getElementById('vcount-'+v.replace(/[\s&]/g,'_'));if(el)el.textContent=count||'0';});}
 
+async function renameProject(id,currentName){
+  var name=prompt("Rename project:",currentName);
+  if(!name||!name.trim()||name.trim()===currentName)return;
+  await api("/api/projects/"+id,{method:"PATCH",body:{name:name.trim()}});
+  await loadProjects();applyFilters();showToast("Project renamed");
+}
 function buildProjectSidebar(){
   var nav=document.getElementById('project-filters');
   if(!nav)return;
@@ -309,7 +315,7 @@ function populateCarrierFilter(){const nav=document.getElementById('carrier-filt
 
 function populateProjectDropdown(){const sel=document.getElementById('edit-project');if(!sel)return;sel.innerHTML='<option value="">No project</option>'+allProjects.sort((a,b)=>a.name.localeCompare(b.name)).map(p=>'<option value="'+p.id+'">'+esc(toTitle(p.name))+'</option>').join('');}
 
-// ── Controls ──────────────────────────────────────────────────────────────────
+// â”€â”€ Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setCarrier(c,btn){currentCarrier=c;document.querySelectorAll('#carrier-filters .filter-item').forEach(b=>b.classList.remove('active-carrier'));btn.classList.add('active-carrier');applyFilters();}
 function setVendor(v,btn){currentVendor=v;document.querySelectorAll('#vendor-filters .filter-item').forEach(b=>b.classList.remove('active-vendor'));btn.classList.add('active-vendor');applyFilters();}
 function setProjectById(id,btn){setProject(id,btn);}
@@ -338,19 +344,19 @@ async function renameProject(id, currentName) {
 function deleteProjectEl(btn){deleteProject(btn.dataset.pid,btn.dataset.pname);}
 async function deleteProject(id,name){if(!confirm('Delete project "'+name+'"?'))return;try{const res=await fetch('/api/projects/'+encodeURIComponent(id),{method:'DELETE'});if(!res.ok)throw new Error('HTTP '+res.status);await loadProjects();showToast('Project deleted');}catch(e){console.error('Delete failed:',e);showToast('Delete failed: '+e.message,true);}}
 
-// ── Edit modal ────────────────────────────────────────────────────────────────
+// â”€â”€ Edit modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openEditModal(id){const s=allShipments.find(s=>s.id===id);if(!s)return;editingId=id;document.getElementById('edit-desc').value=s.description||'';document.getElementById('edit-tracking').value=s.tracking_number||'';document.getElementById('edit-po').value=s.po_number||'';document.getElementById('edit-order').value=s.order_number||'';document.getElementById('edit-shipto').value=s.ship_to||'';const sel=document.getElementById('edit-project');if(sel){populateProjectDropdown();const grp=allGroups.find(g=>g.shipments.some(x=>x.id===id));sel.value=grp?getGroupProject(grp)||'':""; }const statusSel=document.getElementById('edit-status');if(statusSel){statusSel.value=s.received?'received':s.status||'';}document.getElementById('edit-modal').style.display='flex';}
 function closeEditModal(e){if(e&&e.target!==document.getElementById('edit-modal'))return;document.getElementById('edit-modal').style.display='none';editingId=null;}
 async function saveEdit(){if(!editingId)return;const tracking_number=document.getElementById('edit-tracking').value.trim();const po_number=document.getElementById('edit-po').value.trim();const order_number=document.getElementById('edit-order').value.trim();const description=document.getElementById('edit-desc').value.trim();const ship_to=document.getElementById('edit-shipto').value.trim();const project_id=document.getElementById('edit-project').value||null;const statusVal=document.getElementById('edit-status').value;const body={tracking_number,po_number,order_number,description,ship_to};if(statusVal==='received'){body.received=true;}else if(statusVal==='unreceive'){body.received=false;}else if(statusVal){body.status=statusVal;body.received=false;}try{const updated=await api('/api/shipments/'+editingId,{method:'PATCH',body});if(project_id!==undefined)await api('/api/shipments/'+editingId+'/assign',{method:'POST',body:{project_id}});const idx=allShipments.findIndex(s=>s.id===editingId);if(idx>=0){allShipments[idx]={...allShipments[idx],...updated,_vendor:allShipments[idx]._vendor,project_id};}allGroups=groupShipments(allShipments);document.getElementById('edit-modal').style.display='none';editingId=null;await loadProjects();applyFilters();await loadStats();showToast('Shipment updated');}catch(e){showToast('Save failed',true);}}
 
-// ── Notifications / scan ──────────────────────────────────────────────────────
+// â”€â”€ Notifications / scan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function triggerScan(){const btn=document.getElementById('scan-btn');btn.classList.add('scanning');showToast('Scanning your inboxes...');try{await api('/api/scan',{method:'POST'});// Poll for updates every 5 seconds for 60 seconds
 let polls=0;const poll=setInterval(async()=>{polls++;await loadAll();if(polls>=12){clearInterval(poll);btn.classList.remove('scanning');showToast('Scan complete');}},5000);}catch(e){btn.classList.remove('scanning');showToast('Scan failed',true);}}
 async function registerServiceWorker(){if(!('serviceWorker'in navigator)||!('PushManager'in window))return;try{const reg=await navigator.serviceWorker.register('/sw.js');const existing=await reg.pushManager.getSubscription();if(existing){pushSubscription=existing;updateNotifyButton(true);}}catch(e){}}
 async function toggleNotifications(){if(!('serviceWorker'in navigator)){showToast('Push not supported',true);return;}if(pushSubscription){await pushSubscription.unsubscribe();await api('/api/push/unsubscribe',{method:'POST',body:{endpoint:pushSubscription.endpoint}});pushSubscription=null;updateNotifyButton(false);showToast('Notifications disabled');return;}try{const{key}=await api('/api/vapid-public-key');if(!key){showToast('Push not configured',true);return;}const perm=await Notification.requestPermission();if(perm!=='granted'){showToast('Permission denied',true);return;}const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(key)});pushSubscription=sub;await api('/api/push/subscribe',{method:'POST',body:{endpoint:sub.endpoint,keys:{p256dh:sub.toJSON().keys.p256dh,auth:sub.toJSON().keys.auth}}});updateNotifyButton(true);showToast('Notifications enabled');}catch(e){showToast('Could not enable',true);}}
 function updateNotifyButton(active){const btn=document.getElementById('notify-btn');btn.textContent=active?'Notifications on':'Enable notifications';btn.classList.toggle('active',active);}
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function api(url,opts={}){const res=await fetch(url,{method:opts.method||'GET',headers:opts.body?{'Content-Type':'application/json'}:{},body:opts.body?JSON.stringify(opts.body):undefined});if(!res.ok)throw new Error('HTTP '+res.status);return res.json();}
 function showToast(msg,isError=false){const el=document.getElementById('toast');el.textContent=msg;el.style.background=isError?'#a4262c':'';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -358,7 +364,7 @@ function formatDate(u){if(!u)return'';return new Date(u*1000).toLocaleDateString
 function timeAgo(u){const d=Math.floor(Date.now()/1000)-u;if(d<60)return'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
 function urlBase64ToUint8Array(b){const pad='='.repeat((4-b.length%4)%4);const base64=(b+pad).replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from([...atob(base64)].map(c=>c.charCodeAt(0)));}
 
-// ── Mobile functions ──────────────────────────────────────────────────────────
+// â”€â”€ Mobile functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function isMobile(){return window.innerWidth<=768;}
 
 function setMobileView(view,btn){
@@ -406,3 +412,5 @@ triggerScan=async function(){
   await origTriggerScan();
   if(fab)setTimeout(()=>fab.classList.remove('scanning'),5500);
 };
+
+

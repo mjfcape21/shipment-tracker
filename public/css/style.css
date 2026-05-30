@@ -1,4 +1,4 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+﻿*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg:#f3f2f1; --bg2:#ffffff; --bg3:#f8f7f6; --bg4:#edebe9;
   --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.15);
@@ -15,7 +15,7 @@ html { font-size:14px; }
 body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; }
 .app { display:flex; min-height:100vh; }
 
-/* ── Sidebar ── */
+/* â”€â”€ Sidebar â”€â”€ */
 .sidebar { width:var(--sidebar-w); background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; flex-shrink:0; }
 .sidebar-top { padding:12px 8px 8px; flex:1; }
 .logo { font-size:15px; font-weight:700; color:var(--text); margin-bottom:14px; padding:6px 10px; display:flex; align-items:center; gap:8px; }
@@ -92,7 +92,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .notify-btn.active { color:var(--green); border-color:var(--green); background:var(--green-light); }
 @keyframes spin { to { transform:rotate(360deg); } }
 
-/* ── Main ── */
+/* â”€â”€ Main â”€â”€ */
 .main { flex:1; display:flex; flex-direction:column; min-width:0; background:var(--bg); }
 .main-header { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--border); background:var(--bg2); flex-wrap:wrap; gap:10px; }
 .header-left h1 { font-size:16px; font-weight:700; color:var(--text); font-family:var(--font); }
@@ -104,7 +104,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .stat-n.delivered { color:#107c10; }
 .stat-l { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font); }
 
-/* ── Calendar ── */
+/* â”€â”€ Calendar â”€â”€ */
 #main-content { padding:0; flex:1; overflow-y:auto; }
 .calendar-month { margin-bottom:0; }
 .calendar-month-title { font-size:12px; font-weight:700; color:var(--text); background:var(--bg3); border-bottom:1px solid var(--border); padding:7px 24px; position:sticky; top:0; z-index:10; text-transform:uppercase; letter-spacing:0.05em; font-family:var(--font); }
@@ -117,7 +117,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .calendar-day-cards { flex:1; padding:7px 14px; display:flex; flex-direction:column; gap:5px; background:var(--bg2); }
 .calendar-day:hover .calendar-day-cards { background:var(--bg3); }
 
-/* ── Cards ── */
+/* â”€â”€ Cards â”€â”€ */
 .card { border-radius:3px; padding:7px 10px; display:flex; align-items:flex-start; gap:10px; border-left:3px solid var(--accent); background:var(--accent-light); transition:filter 0.1s; }
 .card:hover { filter:brightness(0.97); }
 .card.status-delivered { border-left-color:#107c10; background:var(--green-light); }
@@ -168,10 +168,10 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .delete-btn { font-size:11px; padding:3px 7px; border-radius:2px; border:1px solid var(--border2); background:var(--bg2); color:var(--text3); font-family:var(--font); cursor:pointer; transition:all 0.1s; font-weight:500; }
 .delete-btn:hover { background:var(--red-light); color:var(--red); border-color:var(--red); }
 
-/* ── List view ── */
+/* â”€â”€ List view â”€â”€ */
 .list-view { padding:16px 24px; display:flex; flex-direction:column; gap:5px; }
 
-/* ── Projects view ── */
+/* â”€â”€ Projects view â”€â”€ */
 .projects-grid { padding:16px 24px; display:flex; flex-direction:column; gap:12px; }
 .project-card { background:var(--bg2); border:1px solid var(--border); border-radius:4px; overflow:hidden; }
 .project-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; }
@@ -190,13 +190,13 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .project-delete-btn { background:none; border:none; color:var(--text3); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:3px; font-family:var(--font); }
 .project-delete-btn:hover { color:var(--red); background:var(--red-light); }
 
-/* ── Empty state ── */
+/* â”€â”€ Empty state â”€â”€ */
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 24px; text-align:center; gap:12px; }
 .empty-icon { font-size:36px; }
 .empty-state p { color:var(--text3); font-size:13px; font-family:var(--font); }
 .connect-btn-large { display:inline-block; padding:8px 20px; border-radius:3px; background:var(--accent); color:white; font-size:13px; font-family:var(--font); text-decoration:none; font-weight:600; }
 
-/* ── Modal ── */
+/* â”€â”€ Modal â”€â”€ */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:300; display:flex; align-items:center; justify-content:center; }
 .modal { background:var(--bg2); border:1px solid var(--border2); border-radius:4px; padding:24px; width:440px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.15); }
 .modal-title { font-size:15px; font-weight:700; color:var(--text); margin-bottom:16px; font-family:var(--font); }
@@ -211,7 +211,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .modal-save { background:var(--accent); color:white; border-color:var(--accent); }
 .modal-save:hover { background:var(--accent2); }
 
-/* ── New vendor toast modal ── */
+/* â”€â”€ New vendor toast modal â”€â”€ */
 .vendor-toast { position:fixed; bottom:70px; right:20px; background:var(--bg2); border:1px solid var(--border2); border-radius:4px; padding:14px 16px; width:320px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:200; font-family:var(--font); }
 .vendor-toast-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; }
 .vendor-toast-body { font-size:12px; color:var(--text2); margin-bottom:10px; }
@@ -220,7 +220,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .vendor-toast-yes { background:var(--accent); color:white; border-color:var(--accent); }
 .vendor-toast-no { background:var(--bg2); color:var(--text2); }
 
-/* ── Toast ── */
+/* â”€â”€ Toast â”€â”€ */
 .toast { position:fixed; bottom:20px; right:20px; background:var(--text); color:white; padding:10px 16px; border-radius:4px; font-size:12px; font-family:var(--font); transform:translateY(60px); opacity:0; transition:all 0.2s; pointer-events:none; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
 .toast.show { transform:translateY(0); opacity:1; }
 
@@ -232,7 +232,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .project-rename-btn { background:none; border:none; color:var(--text3); cursor:pointer; font-size:12px; padding:2px 5px; border-radius:3px; font-family:var(--font); flex-shrink:0; }
 .project-rename-btn:hover { color:var(--accent); background:var(--accent-light); }
 
-/* ── Mobile layout ── */
+/* â”€â”€ Mobile layout â”€â”€ */
 @media (max-width:900px), (max-height:500px) and (orientation:landscape) {
   :root { --sidebar-w:100%; }
 
@@ -320,7 +320,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .card-desc-link { color:var(--text); font-weight:600; text-decoration:none; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .card-desc-link:hover { color:var(--accent); text-decoration:underline; }
 
-/* ── Pending project toast ── */
+/* â”€â”€ Pending project toast â”€â”€ */
 .pending-project-toast { position:fixed; bottom:80px; right:20px; background:var(--bg2); border:1px solid var(--border2); border-radius:6px; padding:16px; width:340px; box-shadow:0 4px 20px rgba(0,0,0,0.15); z-index:300; font-family:var(--font); animation:slideUp 0.2s ease; }
 @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
 .ppt-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; }
@@ -334,3 +334,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .ppt-btn-assign:hover { background:var(--accent-light); }
 .ppt-btn-add { padding:5px 10px; border-radius:3px; border:none; background:var(--accent); color:white; font-family:var(--font); font-size:11px; font-weight:600; cursor:pointer; }
 .ppt-btn-add:hover { background:var(--accent2); }
+
+.proj-edit-btn { opacity:0; font-size:11px; margin-left:4px; cursor:pointer; transition:opacity 0.15s; }
+.filter-item:hover .proj-edit-btn { opacity:1; }
+
