@@ -225,7 +225,7 @@ app.get('/api/restore-descriptions', async (req, res) => {
         const t = await gmail.users.threads.get({ userId: 'me', id: row.thread_id, format: 'metadata', metadataHeaders: ['Subject'] });
         const subject = t.data.messages?.[0]?.payload?.headers?.find(h => h.name === 'Subject')?.value;
         if (subject) {
-          await db.query("UPDATE shipments SET description=\ WHERE id=\", [subject.substring(0,200), row.id]);
+          await db.query("UPDATE shipments SET description=$1 WHERE id=$2", [subject.substring(0,200), row.id]);
           fixed++;
         }
       } catch(e) { console.error('thread err', row.thread_id, e.message); }
@@ -261,6 +261,7 @@ db.init().then(async () => {
   console.error('[startup] Failed to initialize database:', err.message);
   process.exit(1);
 });
+
 
 
 
