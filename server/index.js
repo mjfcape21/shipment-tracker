@@ -212,6 +212,27 @@ app.post('/api/projects/ignore-po', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/restore-descriptions', async (req, res) => {
+  try {
+    const blanks = await db.query("SELECT id, thread_id, account_email FROM shipments WHERE description IN ('ADI','ADI ') OR description IS NULL");
+    let fixed = 0;
+    for (const row of blanks.rows) {
+      try {
+        const account = await db.getAccount(row.account_email);
+        if (!account) continue;
+        const auth = buildOAuthClient(account);
+        const gmail = google.gmail({ version: 'v1', auth });
+        const t = await gmail.users.threads.get({ userId: 'me', id: row.thread_id, format: 'metadata', metadataHeaders: ['Subject'] });
+        const subject = t.data.messages?.[0]?.payload?.headers?.find(h => h.name === 'Subject')?.value;
+        if (subject) {
+          await db.query("UPDATE shipments SET description=\ WHERE id=\", [subject.substring(0,200), row.id]);
+          fixed++;
+        }
+      } catch(e) { console.error('thread err', row.thread_id, e.message); }
+    }
+    res.json({ fixed, total: blanks.rows.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.get('/api/fix-descriptions', async (req, res) => {
   const r = await db.query("UPDATE shipments SET description=COALESCE(po_number, tracking_number, vendor, account_email) WHERE description IS NULL");
   res.json({ updated: r.rowCount });
@@ -240,6 +261,7 @@ db.init().then(async () => {
   console.error('[startup] Failed to initialize database:', err.message);
   process.exit(1);
 });
+
 
 
 
