@@ -1,4 +1,4 @@
-const { Pool, types } = require('pg');
+﻿const { Pool, types } = require('pg');
 types.setTypeParser(20, v => parseInt(v, 10));
 
 const pool = new Pool({
@@ -197,9 +197,10 @@ async function assignShipmentToProject(shipmentId, projectId) {
 async function getIgnoredPOs() { const r = await query('SELECT po_lower FROM ignored_pos'); return r.rows.map(r=>r.po_lower); }
 async function ignorePO(po) { await query('INSERT INTO ignored_pos(po_lower) VALUES($1) ON CONFLICT DO NOTHING', [po.toLowerCase().trim()]); }
 
-module.exports = { init,
+module.exports = { init, query,
   getAccounts, getAccount, upsertAccount, updateLastScanned, deleteAccount,
   getShipments, upsertShipment, editShipment, deleteShipment, purgeOldDelivered,
   getUnnotified, markNotified, addSubscription, getSubscriptions, deleteSubscription,
   getStats, getProjects, upsertProject, addProject, deleteProject, renameProject,
   getDeletedProjects, assignShipmentToProject, getIgnoredPOs, ignorePO };
+
