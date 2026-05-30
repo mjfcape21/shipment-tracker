@@ -213,8 +213,9 @@ app.post('/api/projects/ignore-po', async (req, res) => {
 });
 
 app.get('/api/restore-descriptions', async (req, res) => {
+  res.json({ ok: true, message: 'Restore started in background' });
   try {
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 30;
     const blanks = await db.query("SELECT s.id, s.thread_id, s.account_email FROM shipments s WHERE s.description = s.tracking_number OR s.description IN ('ADI','ADI ') OR s.description IS NULL LIMIT $1", [limit]);
     let fixed = 0;
     for (const row of blanks.rows) {
@@ -262,6 +263,7 @@ db.init().then(async () => {
   console.error('[startup] Failed to initialize database:', err.message);
   process.exit(1);
 });
+
 
 
 
