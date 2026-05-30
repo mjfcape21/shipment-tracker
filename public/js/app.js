@@ -306,7 +306,7 @@ function buildProjectSidebar(){
     html+='<button class="filter-item" onclick="setProject(\''+p.id+'\',this)">';
     html+='<span class="filter-dot" style="background:#0078d4"></span>';
     html+=esc(toTitle(p.name));
-    html+='<span class="proj-edit-btn" title="Rename" onclick="event.stopPropagation();renameProject('+p.id+','+p.name+')">✏️</span>';
+    html+='<span class="proj-edit-btn" title="Rename" data-pid="'+p.id+'" data-pname="'+esc(p.name)+'" onclick="event.stopPropagation();renameProject(this.dataset.pid,this.dataset.pname)">✏️</span>';
     html+='<span class="filter-count">'+count+'</span>';
     html+='</button>';
   });
@@ -414,6 +414,7 @@ triggerScan=async function(){
   await origTriggerScan();
   if(fab)setTimeout(()=>fab.classList.remove('scanning'),5500);
 };
+
 
 
 
