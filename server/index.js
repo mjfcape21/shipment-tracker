@@ -213,7 +213,7 @@ app.post('/api/projects/ignore-po', async (req, res) => {
 });
 
 app.get('/api/fix-descriptions', async (req, res) => {
-  const r = await db.query("UPDATE shipments SET description=NULL WHERE description LIKE '%...'");
+  const r = await db.query("UPDATE shipments SET description=COALESCE(po_number, tracking_number, vendor, account_email) WHERE description IS NULL");
   res.json({ updated: r.rowCount });
 });
 
@@ -240,6 +240,7 @@ db.init().then(async () => {
   console.error('[startup] Failed to initialize database:', err.message);
   process.exit(1);
 });
+
 
 
 
