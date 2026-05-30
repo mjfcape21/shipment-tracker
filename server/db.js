@@ -105,7 +105,7 @@ async function upsertShipment(data) {
     const r = await query(`UPDATE shipments SET status=$1,tracking_number=COALESCE($2,tracking_number),
       po_number=COALESCE($3,po_number),eta=COALESCE($4,eta),updated_at=$5
       WHERE account_email=$6 AND thread_id=$7 RETURNING *`,
-      [newStatus, data.tracking_number, data.po_number, data.eta, now, data.account_email, data.thread_id]);
+      [newStatus, data.tracking_number, data.po_number, data.eta, now, data.account_email, data.thread_id, data.description||null]);
     return r.rows[0];
   } else {
     const id = Date.now();
@@ -203,4 +203,5 @@ module.exports = { init, query,
   getUnnotified, markNotified, addSubscription, getSubscriptions, deleteSubscription,
   getStats, getProjects, upsertProject, addProject, deleteProject, renameProject,
   getDeletedProjects, assignShipmentToProject, getIgnoredPOs, ignorePO };
+
 
