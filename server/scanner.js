@@ -1,4 +1,4 @@
-const { google } = require('googleapis');
+﻿const { google } = require('googleapis');
 const db = require('./db');
 
 const CARRIER_PATTERNS = [
@@ -110,8 +110,8 @@ function extractDescription(subject) {
     .replace(/[#|]\s*order\s+number.*$/i, '')
     .trim();
   desc = desc.replace(/^["']|["']$/g, '').trim();
-  if (desc.length > 60) desc = desc.substring(0, 57) + '...';
-  return desc || subject.substring(0, 60);
+  
+  return desc || subject;
 }
 
 function buildOAuthClient(tokens) {
@@ -206,7 +206,7 @@ async function scanAccount(account) {
   } while (pageToken);
 
   db.updateLastScanned(account.email);
-  console.log(`[scanner] Done: ${account.email} — ${newCount} shipments upserted`);
+  console.log(`[scanner] Done: ${account.email} â€” ${newCount} shipments upserted`);
   return newCount;
 }
 
@@ -221,3 +221,4 @@ async function scanAllAccounts() {
 }
 
 module.exports = { scanAllAccounts, scanAccount, buildOAuthClient };
+
