@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express    = require('express');
 const session    = require('express-session');
 const pgSession  = require('connect-pg-simple')(session);
@@ -212,6 +212,11 @@ app.post('/api/projects/ignore-po', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/fix-descriptions', async (req, res) => {
+  const r = await db.query("UPDATE shipments SET description=NULL WHERE description LIKE '%...'");
+  res.json({ updated: r.rowCount });
+});
+
 const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
 cron.schedule(cronSchedule, async () => {
   console.log('[cron] Running scheduled scan...');
@@ -227,11 +232,12 @@ cron.schedule('0 0 * * *', async () => {
 db.init().then(async () => {
   const accounts = await db.getAccounts();
   app.listen(PORT, () => {
-    console.log(`\n🚀 Shipment Tracker running at http://localhost:${PORT}`);
-    console.log(`📧 Scanning on schedule: ${cronSchedule}`);
-    console.log(`📊 Accounts connected: ${accounts.length}\n`);
+    console.log(`\nðŸš€ Shipment Tracker running at http://localhost:${PORT}`);
+    console.log(`ðŸ“§ Scanning on schedule: ${cronSchedule}`);
+    console.log(`ðŸ“Š Accounts connected: ${accounts.length}\n`);
   });
 }).catch(err => {
   console.error('[startup] Failed to initialize database:', err.message);
   process.exit(1);
 });
+
