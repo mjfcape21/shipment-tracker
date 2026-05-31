@@ -211,7 +211,7 @@ async function scanAccount(account) {
 }
 
 async function scanAllAccounts() {
-  const accounts = db.getAccounts();
+  const accounts = await db.getAccounts();
   let total = 0;
   for (const account of accounts) {
     try { total += await scanAccount(account); }
