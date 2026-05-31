@@ -1,4 +1,4 @@
-﻿const { Pool, types } = require('pg');
+const { Pool, types } = require('pg');
 types.setTypeParser(20, v => parseInt(v, 10));
 
 const pool = new Pool({
@@ -103,7 +103,7 @@ async function upsertShipment(data) {
     const existing = ex.rows[0];
     const newStatus = (priority[data.status]||0) > (priority[existing.status]||0) ? data.status : existing.status;
     const r = await query(`UPDATE shipments SET status=$1,tracking_number=COALESCE($2,tracking_number),
-      po_number=COALESCE($3,po_number),eta=COALESCE($4,eta),updated_at=$5
+      po_number=COALESCE($3,po_number),eta=COALESCE($4,eta),description=COALESCE($8,description),updated_at=$5
       WHERE account_email=$6 AND thread_id=$7 RETURNING *`,
       [newStatus, data.tracking_number, data.po_number, data.eta, now, data.account_email, data.thread_id, data.description||null]);
     return r.rows[0];

@@ -1,4 +1,4 @@
-﻿const { google } = require('googleapis');
+const { google } = require('googleapis');
 const db = require('./db');
 
 const CARRIER_PATTERNS = [
@@ -181,7 +181,7 @@ async function scanAccount(account) {
         const tracking    = extractTracking(subject + ' ' + allSnippets);
         const po_number   = extractPO(subject + ' ' + allSnippets);
         const eta         = extractETA(allSnippets);
-        const description = extractDescription(subject);
+        const description = subject;
 
         if (carrier === 'Other' && status === 'pending' && !po_number) continue;
 
