@@ -133,6 +133,9 @@ function buildOAuthClient(tokens) {
   return client;
 }
 
+function decodeBody(payload){if(!payload)return '';var plain='',html='';var walk=function(p){if(!p)return;if(p.body&&p.body.data){try{var txt=Buffer.from(p.body.data,'base64url').toString('utf8');if(p.mimeType==='text/plain')plain+=txt+'\n';else if(p.mimeType==='text/html')html+=txt+'\n';}catch(e){}}if(p.parts)p.parts.forEach(walk);};walk(payload);return plain||html.replace(/<[^>]+>/g,' ');}
+function extractCustomerPO(text){if(!text)return null;var m=text.match(/\bcustomer\s+po\s*[:#]?\s*([A-Za-z0-9][^\r\n]*?)(?:\s{2,}|\s+order\b|\s+ship\b|[\r\n]|$)/i);if(m&&m[1]){var v=m[1].trim();if(v.length>=2&&v.length<=40)return v;}return null;}
+
 async function scanAccount(account) {
   console.log(`[scanner] Scanning ${account.email}...`);
   const auth = buildOAuthClient({
@@ -156,13 +159,14 @@ async function scanAccount(account) {
     for (const thread of threads) {
       try {
         const detail = await gmail.users.threads.get({
-          userId: 'me', id: thread.id, format: 'metadata',
+          userId: 'me', id: thread.id, format: 'full',
           metadataHeaders: ['Subject', 'From', 'Date'],
         });
         const messages = detail.data.messages || [];
         if (!messages.length) continue;
 
         const allSnippets = messages.map(m => m.snippet || '').join(' ');
+        const allBodies = messages.map(m => decodeBody(m.payload)).join(' ');
         const firstMsg = messages[0];
         const lastMsg  = messages[messages.length - 1];
 
@@ -179,7 +183,7 @@ async function scanAccount(account) {
         const carrier     = detectCarrier(sender, subject, allSnippets);
         const status      = detectStatus(subject, allSnippets);
         const tracking    = extractTracking(subject + ' ' + allSnippets);
-        const po_number   = extractPO(subject + ' ' + allSnippets);
+        const po_number   = extractPO(subject + ' ' + allSnippets) || extractCustomerPO(allBodies);
         const eta         = extractETA(allSnippets);
         const description = subject;
 
