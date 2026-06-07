@@ -1,4 +1,4 @@
-﻿async function renameProject(id,currentName){var name=prompt('Rename project:',currentName);if(!name||!name.trim()||name.trim()===currentName)return;await api('/api/projects/'+id,{method:'PATCH',body:{name:name.trim()}});await loadProjects();applyFilters();showToast('Project renamed');}
+async function renameProject(id,currentName){var name=prompt('Rename project:',currentName);if(!name||!name.trim()||name.trim()===currentName)return;await api('/api/projects/'+id,{method:'PATCH',body:{name:name.trim()}});await loadProjects();applyFilters();showToast('Project renamed');}
 'use strict';
 let currentFilter='all',currentVendor='',currentCarrier='',currentProject='',currentView='calendar',currentSort='desc',allShipments=[],allGroups=[],allProjects=[],pushSubscription=null,editingId=null,pendingVendor=null;
 
@@ -306,7 +306,7 @@ function buildProjectSidebar(){
     html+='<button class="filter-item" onclick="setProject(\''+p.id+'\',this)">';
     html+='<span class="filter-dot" style="background:#0078d4"></span>';
     html+=esc(toTitle(p.name));
-    html+='<span class="proj-edit-btn" title="Rename" data-pid="'+p.id+'" data-pname="'+esc(p.name)+'" onclick="event.stopPropagation();renameProject(this.dataset.pid,this.dataset.pname)">✏️</span>';
+    html+='<span class="proj-edit-btn" title="Rename" data-pid="'+p.id+'" data-pname="'+esc(p.name)+'" onclick="event.stopPropagation();showProjectMenu(event,this.dataset.pid,this.dataset.pname)">✏️</span>';
     html+='<span class="filter-count">'+count+'</span>';
     html+='</button>';
   });
@@ -415,7 +415,69 @@ triggerScan=async function(){
   if(fab)setTimeout(()=>fab.classList.remove('scanning'),5500);
 };
 
+// --- Project actions menu (sidebar pencil -> Rename / Delete) ---
+function showProjectMenu(ev, pid, pname){
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  var existing = document.getElementById('project-action-menu');
+  if (existing) existing.remove();
+  var menu = document.createElement('div');
+  menu.id = 'project-action-menu';
+  menu.style.cssText = 'position:fixed;z-index:99999;background:#fff;border:1px solid #d6d6d6;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.18);padding:4px;min-width:150px;font-size:14px;';
+  function mkBtn(label, fn){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.style.cssText = 'display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;cursor:pointer;border-radius:6px;color:#222;';
+    b.onmouseenter = function(){ b.style.background = '#f1f1f1'; };
+    b.onmouseleave = function(){ b.style.background = 'none'; };
+    b.onclick = function(e){ e.stopPropagation(); closeMenu(); fn(); };
+    return b;
+  }
+  function closeMenu(){
+    if (menu.parentNode) menu.remove();
+    document.removeEventListener('click', closeMenu);
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(e){ if (e.key === 'Escape') closeMenu(); }
+  menu.appendChild(mkBtn('\u270F\uFE0F  Rename', function(){ renameProject(pid, pname); }));
+  menu.appendChild(mkBtn('\uD83D\uDDD1\uFE0F  Delete', function(){ deleteProject(pid, pname); }));
+  document.body.appendChild(menu);
+  var x = (ev && ev.clientX) || 100, y = (ev && ev.clientY) || 100;
+  var r = menu.getBoundingClientRect();
+  if (x + r.width > window.innerWidth) x = window.innerWidth - r.width - 8;
+  if (y + r.height > window.innerHeight) y = window.innerHeight - r.height - 8;
+  menu.style.left = Math.max(8, x) + 'px';
+  menu.style.top = Math.max(8, y) + 'px';
+  setTimeout(function(){ document.addEventListener('click', closeMenu); document.addEventListener('keydown', onKey); }, 0);
+}
 
-
-
-
+// --- Override: edit-shipment project dropdown gains "Add new project" ---
+function populateProjectDropdown(){
+  var sel = document.getElementById('edit-project');
+  if (!sel) return;
+  var prev = sel.value;
+  sel.innerHTML =
+    '<option value="">No project</option>'
+    + allProjects.slice().sort(function(a,b){ return a.name.localeCompare(b.name); })
+        .map(function(p){ return '<option value="' + p.id + '">' + esc(toTitle(p.name)) + '</option>'; }).join('')
+    + '<option value="__add_new__">\u2795 Add new project\u2026</option>';
+  sel.onchange = async function(){
+    if (this.value !== '__add_new__') return;
+    var name = prompt('New project name:');
+    if (!name || !name.trim()){ this.value = prev || ''; return; }
+    name = name.trim();
+    try {
+      var created = await api('/api/projects', { method: 'POST', body: { name: name } });
+      await loadProjects();
+      populateProjectDropdown();
+      var s2 = document.getElementById('edit-project');
+      var nid = (created && created.id != null) ? created.id
+              : ((allProjects.find(function(p){ return p.name.trim().toLowerCase() === name.toLowerCase(); }) || {}).id);
+      if (nid != null) s2.value = nid;
+      showToast('Project added: ' + name);
+    } catch (e){
+      this.value = prev || '';
+      showToast('Could not add project: ' + e.message, true);
+    }
+  };
+}
