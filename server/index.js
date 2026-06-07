@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const express    = require('express');
 const session    = require('express-session');
 const pgSession  = require('connect-pg-simple')(session);
@@ -8,7 +8,7 @@ const path       = require('path');
 
 const db = require('./db');
 const { scanAllAccounts, scanAccount, buildOAuthClient } = require('./scanner');
-const { processNotifications } = require('./notifications');
+const { processNotifications, sendDailySummary } = require('./notifications');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -241,6 +241,15 @@ app.get('/api/fix-descriptions', async (req, res) => {
 });
 
 const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
+app.get("/api/test-summary", async (req, res) => {
+  try { await sendDailySummary(); res.json({ ok: true }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+cron.schedule("0 5 * * *", async () => {
+  console.log("[cron] Sending daily summary...");
+  try { await sendDailySummary(); }
+  catch (err) { console.error("[cron] Daily summary error:", err.message); }
+}, { timezone: "America/New_York" });
 cron.schedule(cronSchedule, async () => {
   console.log('[cron] Running scheduled scan...');
   try { await scanAllAccounts(); await processNotifications(); }
