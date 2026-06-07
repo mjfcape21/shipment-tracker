@@ -1,4 +1,4 @@
-﻿*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg:#f3f2f1; --bg2:#ffffff; --bg3:#f8f7f6; --bg4:#edebe9;
   --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.15);
@@ -338,3 +338,17 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
 .proj-edit-btn { opacity:0; font-size:11px; margin-left:4px; cursor:pointer; transition:opacity 0.15s; }
 .filter-item:hover .proj-edit-btn { opacity:1; }
 
+/* Tracking number + email date: consistent font, readable */
+.tracking-tag {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+.date-tag {
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--text);
+}

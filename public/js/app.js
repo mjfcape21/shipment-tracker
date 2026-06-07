@@ -481,3 +481,55 @@ function populateProjectDropdown(){
     }
   };
 }
+
+// --- Drag-to-resize sidebar ---
+(function initSidebarResize(){
+  function setup(){
+    var sb = document.querySelector('.sidebar');
+    if (!sb) return;
+    var saved = localStorage.getItem('sidebarWidth');
+    if (saved) document.documentElement.style.setProperty('--sidebar-w', saved);
+    if (document.getElementById('sidebar-resizer')) return;
+    var dragging = false, left0 = 0;
+    var handle = document.createElement('div');
+    handle.id = 'sidebar-resizer';
+    handle.title = 'Drag to resize sidebar';
+    handle.style.cssText = 'position:fixed;top:0;bottom:0;width:8px;margin-left:-4px;cursor:col-resize;z-index:50;background:transparent;';
+    handle.onmouseenter = function(){ if(!dragging) handle.style.background = 'rgba(0,120,212,0.25)'; };
+    handle.onmouseleave = function(){ if(!dragging) handle.style.background = 'transparent'; };
+    document.body.appendChild(handle);
+    function place(){
+      var r = sb.getBoundingClientRect();
+      if (r.width === 0 || window.innerWidth < 768) { handle.style.display = 'none'; return; }
+      handle.style.display = 'block';
+      handle.style.left = r.right + 'px';
+    }
+    place();
+    window.addEventListener('resize', place);
+    handle.addEventListener('mousedown', function(e){
+      dragging = true; left0 = sb.getBoundingClientRect().left;
+      e.preventDefault();
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      handle.style.background = 'rgba(0,120,212,0.45)';
+    });
+    window.addEventListener('mousemove', function(e){
+      if (!dragging) return;
+      var w = Math.min(560, Math.max(180, e.clientX - left0));
+      document.documentElement.style.setProperty('--sidebar-w', w + 'px');
+      place();
+    });
+    window.addEventListener('mouseup', function(){
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      handle.style.background = 'transparent';
+      var cur = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w').trim();
+      if (cur) localStorage.setItem('sidebarWidth', cur);
+      place();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+  else setup();
+})();
