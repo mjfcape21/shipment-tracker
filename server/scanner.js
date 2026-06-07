@@ -219,7 +219,12 @@ async function scanAllAccounts() {
   let total = 0;
   for (const account of accounts) {
     try { total += await scanAccount(account); }
-    catch (err) { console.error(`[scanner] Failed for ${account.email}:`, err.message); }
+    catch (err) { const em = (err && err.message) || String(err);
+        if (/invalid_grant|invalid_token|unauthorized|invalid credentials|no refresh token|401|403/i.test(em)) {
+          console.error(`[scanner] AUTH FAILED for ${account.email} — token expired or revoked; reconnect at /auth/connect (${em})`);
+        } else {
+          console.error(`[scanner] Failed for ${account.email}:`, em);
+        } }
   }
   return total;
 }
