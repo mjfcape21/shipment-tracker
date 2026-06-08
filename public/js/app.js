@@ -540,8 +540,8 @@ async function openSettings() {
   const overlay = document.createElement("div");
   overlay.id = "settings-overlay";
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 16px";
-  const fld = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><input id="' + id + '" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px"></label>';
-  const area = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><textarea id="' + id + '" rows="3" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;resize:vertical"></textarea></label>';
+  const fld = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><input id="' + id + '" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit"></label>';
+  const area = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><textarea id="' + id + '" rows="3" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical"></textarea></label>';
   const panel = document.createElement("div");
   panel.style.cssText = "background:#fff;border-radius:12px;max-width:520px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.25);font-family:system-ui,-apple-system,sans-serif;color:#222";
   panel.innerHTML =
