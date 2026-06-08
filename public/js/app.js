@@ -549,6 +549,7 @@ async function openSettings() {
   panel.innerHTML =
     '<h2 style="margin:0 0 16px;font-size:18px">Settings</h2>' +
     '<div style="font-size:12px;font-weight:600;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em">Company information</div>' +
+    fld("set-app-title", "Header title") +
     fld("set-company-name", "Company name") +
     fld("set-company-website", "Website") +
     fld("set-company-phone", "Phone") +
@@ -607,14 +608,14 @@ async function openSettings() {
   try {
     var s = await api("/api/settings");
     var c = (s && s.company) || {};
-    setVal("set-company-name", c.name);
+    setVal("set-app-title", c.appName); setVal("set-company-name", c.name);
     setVal("set-company-website", c.website);
     setVal("set-company-phone", c.phone);
     setVal("set-company-address", c.address);
     showLogo(c.logo || "");
   } catch (e) {}
   byId("set-save").onclick = async function () {
-    var company = { name: gv("set-company-name"), website: gv("set-company-website"), phone: gv("set-company-phone"), address: gv("set-company-address"), logo: logoData };
+    var company = { name: gv("set-company-name"), appName: gv("set-app-title"), website: gv("set-company-website"), phone: gv("set-company-phone"), address: gv("set-company-address"), logo: logoData };
     try { await api("/api/settings", { method: "PUT", body: { company: company } }); showToast("Settings saved"); close(); }
     catch (e) { showToast("Save failed: " + e.message, true); }
   };
@@ -639,4 +640,34 @@ async function openSettings() {
   var hide = function(){ var sec = document.querySelector(".accounts-section"); if (sec) sec.style.display = "none"; };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hide);
   else hide();
+})();
+
+(function applyBrandHeader(){
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function fmtPhone(p){
+    var d = String(p==null?"":p).replace(/\D/g,"");
+    if (d.length === 11 && d.charAt(0) === "1") d = d.slice(1);
+    if (d.length === 10) return "(" + d.slice(0,3) + ") " + d.slice(3,6) + "-" + d.slice(6);
+    return String(p==null?"":p);
+  }
+  function apply(){
+    var box = document.querySelector(".logo");
+    if (!box) return;
+    fetch("/api/settings").then(function(r){ return r.json(); }).then(function(s){
+      var c = (s && s.company) || {};
+      var origText = box.getAttribute("data-orig") || box.textContent.replace(/^[^A-Za-z0-9]+/,"").trim();
+      box.setAttribute("data-orig", origText);
+      var title = (c.appName && c.appName.trim()) || origText || "Tracker";
+      var lines = [];
+      if (c.name) lines.push('<span style="font-weight:600;font-size:12px;color:#555">' + esc(c.name) + '</span>');
+      if (c.address) String(c.address).split(/\n+/).forEach(function(ln){ if (ln.trim()) lines.push('<span style="font-size:11px;color:#888">' + esc(ln.trim()) + '</span>'); });
+      if (c.phone) lines.push('<span style="font-size:11px;color:#888">' + esc(fmtPhone(c.phone)) + '</span>');
+      if (c.website) { var u = c.website; if (!/^https?:\/\//i.test(u)) u = "https://" + u; lines.push('<a href="' + esc(u) + '" target="_blank" rel="noopener" style="font-size:11px;color:#1a73e8;text-decoration:none">' + esc(c.website) + '</a>'); }
+      var img = c.logo ? '<img class="brand-logo" src="' + c.logo + '" style="height:40px;width:auto;max-width:120px;border-radius:6px;object-fit:contain;flex:none">' : "";
+      box.style.alignItems = "flex-start";
+      box.innerHTML = img + '<div style="display:flex;flex-direction:column;line-height:1.3;gap:1px"><span style="font-weight:700;font-size:15px;color:#201f1e">' + esc(title) + '</span>' + lines.join("") + '</div>';
+    }).catch(function(){});
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
+  else apply();
 })();
