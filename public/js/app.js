@@ -533,3 +533,70 @@ function populateProjectDropdown(){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
   else setup();
 })();
+
+// --- Settings modal (company info) ---
+async function openSettings() {
+  if (document.getElementById("settings-overlay")) return;
+  const overlay = document.createElement("div");
+  overlay.id = "settings-overlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 16px";
+  const fld = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><input id="' + id + '" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px"></label>';
+  const area = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><textarea id="' + id + '" rows="3" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;resize:vertical"></textarea></label>';
+  const panel = document.createElement("div");
+  panel.style.cssText = "background:#fff;border-radius:12px;max-width:520px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.25);font-family:system-ui,-apple-system,sans-serif;color:#222";
+  panel.innerHTML =
+    '<h2 style="margin:0 0 4px;font-size:18px">Settings</h2>' +
+    '<p style="margin:0 0 18px;color:#888;font-size:13px">Company information</p>' +
+    fld("set-company-name", "Company name") +
+    fld("set-company-website", "Website") +
+    fld("set-company-phone", "Phone") +
+    area("set-company-address", "Address") +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">' +
+    '<button id="set-cancel" style="padding:9px 16px;border:1px solid #ccc;background:#fff;border-radius:7px;cursor:pointer">Cancel</button>' +
+    '<button id="set-save" style="padding:9px 16px;border:none;background:#1a73e8;color:#fff;border-radius:7px;cursor:pointer">Save</button>' +
+    "</div>";
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  document.getElementById("set-cancel").onclick = close;
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
+  const gv = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  try {
+    const s = await api("/api/settings");
+    const c = (s && s.company) || {};
+    setVal("set-company-name", c.name);
+    setVal("set-company-website", c.website);
+    setVal("set-company-phone", c.phone);
+    setVal("set-company-address", c.address);
+  } catch (e) {}
+  document.getElementById("set-save").onclick = async () => {
+    const company = {
+      name: gv("set-company-name"),
+      website: gv("set-company-website"),
+      phone: gv("set-company-phone"),
+      address: gv("set-company-address")
+    };
+    try {
+      await api("/api/settings", { method: "PUT", body: { company: company } });
+      showToast("Settings saved");
+      close();
+    } catch (e) { showToast("Save failed: " + e.message, true); }
+  };
+}
+
+(function injectSettingsButton() {
+  const add = () => {
+    const actions = document.querySelector(".actions");
+    if (!actions || document.getElementById("open-settings-btn")) return;
+    const b = document.createElement("button");
+    b.id = "open-settings-btn";
+    b.className = "notify-btn";
+    b.textContent = "\u2699\uFE0F  Settings";
+    b.style.marginTop = "6px";
+    b.onclick = openSettings;
+    actions.appendChild(b);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", add);
+  else add();
+})();
