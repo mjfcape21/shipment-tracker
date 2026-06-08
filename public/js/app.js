@@ -537,54 +537,88 @@ function populateProjectDropdown(){
 // --- Settings modal (company info) ---
 async function openSettings() {
   if (document.getElementById("settings-overlay")) return;
-  const overlay = document.createElement("div");
+  var logoData = "";
+  var byId = function (id) { return document.getElementById(id); };
+  var overlay = document.createElement("div");
   overlay.id = "settings-overlay";
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 16px";
-  const fld = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><input id="' + id + '" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit"></label>';
-  const area = (id, label) => '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><textarea id="' + id + '" rows="3" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical"></textarea></label>';
-  const panel = document.createElement("div");
+  var fld = function (id, label) { return '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><input id="' + id + '" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit"></label>'; };
+  var area = function (id, label) { return '<label style="display:block;margin-bottom:12px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">' + label + '</span><textarea id="' + id + '" rows="3" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical"></textarea></label>'; };
+  var panel = document.createElement("div");
   panel.style.cssText = "background:#fff;border-radius:12px;max-width:520px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.25);font-family:system-ui,-apple-system,sans-serif;color:#222";
   panel.innerHTML =
-    '<h2 style="margin:0 0 4px;font-size:18px">Settings</h2>' +
-    '<p style="margin:0 0 18px;color:#888;font-size:13px">Company information</p>' +
+    '<h2 style="margin:0 0 16px;font-size:18px">Settings</h2>' +
+    '<div style="font-size:12px;font-weight:600;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em">Company information</div>' +
     fld("set-company-name", "Company name") +
     fld("set-company-website", "Website") +
     fld("set-company-phone", "Phone") +
     area("set-company-address", "Address") +
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">' +
-    '<button id="set-cancel" style="padding:9px 16px;border:1px solid #ccc;background:#fff;border-radius:7px;cursor:pointer">Cancel</button>' +
-    '<button id="set-save" style="padding:9px 16px;border:none;background:#1a73e8;color:#fff;border-radius:7px;cursor:pointer">Save</button>' +
-    "</div>";
+    '<div style="margin-bottom:4px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">Logo</span><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><img id="set-logo-preview" alt="logo" style="max-width:120px;max-height:60px;border:1px solid #eee;border-radius:6px;padding:4px;display:none"><input id="set-logo-file" type="file" accept="image/*" style="font-size:13px"><button id="set-logo-remove" type="button" style="display:none;padding:6px 10px;border:1px solid #ccc;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">Remove</button></div></div>' +
+    '<div style="font-size:12px;font-weight:600;color:#666;margin:22px 0 10px;text-transform:uppercase;letter-spacing:0.04em">Email accounts</div>' +
+    '<div id="set-accounts" style="margin-bottom:10px"></div>' +
+    '<a href="/auth/connect" style="display:inline-block;padding:8px 14px;border:1px solid #1a73e8;color:#1a73e8;border-radius:7px;text-decoration:none;font-size:14px">+ Add email account</a>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:22px"><button id="set-cancel" type="button" style="padding:9px 16px;border:1px solid #ccc;background:#fff;border-radius:7px;cursor:pointer">Cancel</button><button id="set-save" type="button" style="padding:9px 16px;border:none;background:#1a73e8;color:#fff;border-radius:7px;cursor:pointer">Save</button></div>';
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
-  const close = () => overlay.remove();
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
-  document.getElementById("set-cancel").onclick = close;
-  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
-  const gv = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  var close = function () { overlay.remove(); };
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+  byId("set-cancel").onclick = close;
+  var setVal = function (id, v) { var el = byId(id); if (el) el.value = v || ""; };
+  var gv = function (id) { var el = byId(id); return el ? el.value.trim() : ""; };
+  var showLogo = function (data) {
+    logoData = data || "";
+    var img = byId("set-logo-preview"), rm = byId("set-logo-remove");
+    if (logoData) { img.src = logoData; img.style.display = "inline-block"; rm.style.display = "inline-block"; }
+    else { img.style.display = "none"; rm.style.display = "none"; }
+  };
+  byId("set-logo-remove").onclick = function () { showLogo(""); byId("set-logo-file").value = ""; };
+  byId("set-logo-file").onchange = function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var max = 400, w = im.width, h = im.height;
+        if (w > max || h > max) { var sc = Math.min(max / w, max / h); w = Math.round(w * sc); h = Math.round(h * sc); }
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(im, 0, 0, w, h);
+        showLogo(canvas.toDataURL("image/png"));
+      };
+      im.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  var renderAccts = async function () {
+    try {
+      var accts = await api("/api/accounts");
+      var box = byId("set-accounts");
+      if (!accts || !accts.length) { box.innerHTML = '<div style="color:#999;font-size:13px">No accounts connected.</div>'; return; }
+      box.innerHTML = accts.map(function (a) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid #eee;border-radius:7px;margin-bottom:6px"><span style="font-size:14px">' + esc(a.email) + '</span><button type="button" data-email="' + esc(a.email) + '" class="set-acct-remove" style="padding:4px 9px;border:1px solid #e0e0e0;background:#fff;border-radius:6px;cursor:pointer;color:#c0392b;font-size:13px">Remove</button></div>';
+      }).join("");
+      Array.prototype.forEach.call(box.querySelectorAll(".set-acct-remove"), function (btn) {
+        btn.onclick = async function () { await disconnectAccount(btn.dataset.email); renderAccts(); };
+      });
+    } catch (e) { byId("set-accounts").innerHTML = '<div style="color:#c0392b;font-size:13px">Could not load accounts.</div>'; }
+  };
+  renderAccts();
   try {
-    const s = await api("/api/settings");
-    const c = (s && s.company) || {};
+    var s = await api("/api/settings");
+    var c = (s && s.company) || {};
     setVal("set-company-name", c.name);
     setVal("set-company-website", c.website);
     setVal("set-company-phone", c.phone);
     setVal("set-company-address", c.address);
+    showLogo(c.logo || "");
   } catch (e) {}
-  document.getElementById("set-save").onclick = async () => {
-    const company = {
-      name: gv("set-company-name"),
-      website: gv("set-company-website"),
-      phone: gv("set-company-phone"),
-      address: gv("set-company-address")
-    };
-    try {
-      await api("/api/settings", { method: "PUT", body: { company: company } });
-      showToast("Settings saved");
-      close();
-    } catch (e) { showToast("Save failed: " + e.message, true); }
+  byId("set-save").onclick = async function () {
+    var company = { name: gv("set-company-name"), website: gv("set-company-website"), phone: gv("set-company-phone"), address: gv("set-company-address"), logo: logoData };
+    try { await api("/api/settings", { method: "PUT", body: { company: company } }); showToast("Settings saved"); close(); }
+    catch (e) { showToast("Save failed: " + e.message, true); }
   };
 }
-
 (function injectSettingsButton() {
   const add = () => {
     const actions = document.querySelector(".actions");
@@ -599,4 +633,10 @@ async function openSettings() {
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", add);
   else add();
+})();
+
+(function hideSidebarAccounts(){
+  var hide = function(){ var sec = document.querySelector(".accounts-section"); if (sec) sec.style.display = "none"; };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hide);
+  else hide();
 })();
