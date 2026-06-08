@@ -131,7 +131,7 @@ async function sendDailySummary() {
     section("Delivered recently", arrived) +
     (process.env.APP_URL ? '<p style="margin-top:24px"><a href="' + process.env.APP_URL + '" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Open tracker</a></p>' : "") +
     "</div>";
-  const subject = "Shipments \u2014 " + arriving.length + " arriving today, " + arrived.length + " just delivered";
+  const subject = "Daily Shipment Status for MJF LLC";
   await sendEmailNotification(subject, html);
   console.log("[summary] Sent: " + arriving.length + " arriving, " + arrived.length + " delivered");
 }
