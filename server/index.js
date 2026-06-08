@@ -241,22 +241,7 @@ app.get('/api/fix-descriptions', async (req, res) => {
 });
 
 const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
-app.get("/api/email-test", async (req, res) => {
-  const key = process.env.RESEND_API_KEY;
-  const to = process.env.NOTIFY_EMAIL;
-  const from = process.env.RESEND_FROM || "Shipment Tracker <onboarding@resend.dev>";
-  if (!key) return res.json({ ok: false, reason: "RESEND_API_KEY not set" });
-  if (!to) return res.json({ ok: false, reason: "NOTIFY_EMAIL not set" });
-  try {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: from, to: to, subject: "Resend test", html: "<p>Test from shipment tracker.</p>" })
-    });
-    const body = await r.text();
-    res.json({ ok: r.ok, status: r.status, to: to, fromUsed: from, resend: body.substring(0, 600) });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});app.get("/api/test-summary", async (req, res) => {
+app.get("/api/test-summary", async (req, res) => {
   try { await sendDailySummary(); res.json({ ok: true }); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
