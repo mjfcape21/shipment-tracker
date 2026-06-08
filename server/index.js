@@ -241,7 +241,14 @@ app.get('/api/fix-descriptions', async (req, res) => {
 });
 
 const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
-app.get("/api/test-summary", async (req, res) => {
+app.get("/api/settings", async (req, res) => {
+  try { res.json(await db.getSettings()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.put("/api/settings", async (req, res) => {
+  try { await db.saveSettings(req.body || {}); res.json({ ok: true }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});app.get("/api/test-summary", async (req, res) => {
   try { await sendDailySummary(); res.json({ ok: true }); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });

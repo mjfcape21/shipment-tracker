@@ -13,6 +13,7 @@ async function query(sql, params = []) {
 }
 
 async function init() {
+  await query('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT, updated_at BIGINT)');
   await query(`CREATE TABLE IF NOT EXISTS accounts (
     email         TEXT PRIMARY KEY,
     access_token  TEXT,
@@ -202,6 +203,26 @@ module.exports = { init, query,
   getShipments, upsertShipment, editShipment, deleteShipment, purgeOldDelivered,
   getUnnotified, markNotified, addSubscription, getSubscriptions, deleteSubscription,
   getStats, getProjects, upsertProject, addProject, deleteProject, renameProject,
-  getDeletedProjects, assignShipmentToProject, getIgnoredPOs, ignorePO };
+  getDeletedProjects, assignShipmentToProject, getIgnoredPOs, ignorePO, getSettings, saveSettings };
 
+async function getSettings() {
+  const r = await query("SELECT key, value FROM settings");
+  const out = {};
+  for (const row of r.rows) {
+    try { out[row.key] = JSON.parse(row.value); }
+    catch (e) { out[row.key] = row.value; }
+  }
+  return out;
+}
 
+async function saveSettings(obj) {
+  if (!obj || typeof obj !== "object") return;
+  const now = Math.floor(Date.now() / 1000);
+  for (const key of Object.keys(obj)) {
+    const value = JSON.stringify(obj[key]);
+    await query(
+      "INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = $3",
+      [key, value, now]
+    );
+  }
+}
