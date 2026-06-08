@@ -555,6 +555,8 @@ async function openSettings() {
     fld("set-company-phone", "Phone") +
     area("set-company-address", "Address") +
     '<div style="margin-bottom:4px"><span style="display:block;font-size:13px;color:#555;margin-bottom:4px">Logo</span><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><img id="set-logo-preview" alt="logo" style="max-width:120px;max-height:60px;border:1px solid #eee;border-radius:6px;padding:4px;display:none"><input id="set-logo-file" type="file" accept="image/*" style="font-size:13px"><button id="set-logo-remove" type="button" style="display:none;padding:6px 10px;border:1px solid #ccc;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">Remove</button></div></div>' +
+    '<div style="font-size:12px;font-weight:600;color:#666;margin:22px 0 10px;text-transform:uppercase;letter-spacing:0.04em">Appearance</div>' +
+    '<div id="set-theme" style="display:flex;gap:8px;margin-bottom:6px"></div>' +
     '<div style="font-size:12px;font-weight:600;color:#666;margin:22px 0 10px;text-transform:uppercase;letter-spacing:0.04em">Email accounts</div>' +
     '<div id="set-accounts" style="margin-bottom:10px"></div>' +
     '<a href="/auth/connect" style="display:inline-block;padding:8px 14px;border:1px solid #1a73e8;color:#1a73e8;border-radius:7px;text-decoration:none;font-size:14px">+ Add email account</a>' +
@@ -564,6 +566,24 @@ async function openSettings() {
   var close = function () { overlay.remove(); };
   overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
   byId("set-cancel").onclick = close;
+  (function(){
+    var wrap = byId("set-theme");
+    if (!wrap || typeof window.getAppTheme !== "function") return;
+    var modes = [["light","Light"],["dark","Dark"],["system","System"]];
+    var render = function(){
+      var cur = window.getAppTheme();
+      wrap.innerHTML = "";
+      modes.forEach(function(m){
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = m[1];
+        var on = (cur === m[0]);
+        b.style.cssText = "flex:1;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;border:1px solid " + (on?"#1a73e8":"#ccc") + ";background:" + (on?"#1a73e8":"#fff") + ";color:" + (on?"#fff":"#333");
+        b.onclick = function(){ window.setAppTheme(m[0]); render(); };
+        wrap.appendChild(b);
+      });
+    };
+    render();
+  })();
   var setVal = function (id, v) { var el = byId(id); if (el) el.value = v || ""; };
   var gv = function (id) { var el = byId(id); return el ? el.value.trim() : ""; };
   var showLogo = function (data) {
@@ -659,15 +679,39 @@ async function openSettings() {
       box.setAttribute("data-orig", origText);
       var title = (c.appName && c.appName.trim()) || origText || "Tracker";
       var lines = [];
-      if (c.name) lines.push('<span style="font-weight:600;font-size:12px;color:#555">' + esc(c.name) + '</span>');
-      if (c.address) String(c.address).split(/\n+/).forEach(function(ln){ if (ln.trim()) lines.push('<span style="font-size:11px;color:#888">' + esc(ln.trim()) + '</span>'); });
-      if (c.phone) lines.push('<span style="font-size:11px;color:#888">' + esc(fmtPhone(c.phone)) + '</span>');
-      if (c.website) { var u = c.website; if (!/^https?:\/\//i.test(u)) u = "https://" + u; lines.push('<a href="' + esc(u) + '" target="_blank" rel="noopener" style="font-size:11px;color:#1a73e8;text-decoration:none">' + esc(c.website) + '</a>'); }
-      var img = c.logo ? '<img class="brand-logo" src="' + c.logo + '" style="height:40px;width:auto;max-width:120px;border-radius:6px;object-fit:contain;flex:none">' : "";
+      if (c.name) lines.push('<span style="font-weight:600;font-size:12px;color:var(--text2)">' + esc(c.name) + '</span>');
+      if (c.address) String(c.address).split(/\n+/).forEach(function(ln){ if (ln.trim()) lines.push('<span style="font-size:11px;color:var(--text3)">' + esc(ln.trim()) + '</span>'); });
+      if (c.phone) lines.push('<span style="font-size:11px;color:var(--text3)">' + esc(fmtPhone(c.phone)) + '</span>');
+      if (c.website) { var u = c.website; if (!/^https?:\/\//i.test(u)) u = "https://" + u; lines.push('<a href="' + esc(u) + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none">' + esc(c.website) + '</a>'); }
+      var img = c.logo ? '<img class="brand-logo" src="' + c.logo + '" style="width:auto;max-width:140px;border-radius:6px;object-fit:contain;flex:none">' : "";
       box.style.alignItems = "flex-start";
-      box.innerHTML = img + '<div style="display:flex;flex-direction:column;line-height:1.3;gap:1px"><span style="font-weight:700;font-size:15px;color:#201f1e">' + esc(title) + '</span>' + lines.join("") + '</div>';
+      box.innerHTML = img + '<div style="display:flex;flex-direction:column;line-height:1.3;gap:1px"><span style="font-weight:700;font-size:15px;color:var(--text)">' + esc(title) + '</span>' + lines.join("") + '</div>';
+      var _col = box.lastElementChild, _img = box.querySelector("img.brand-logo");
+      if (_img && _col) { _img.style.height = _col.offsetHeight + "px"; }
     }).catch(function(){});
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
   else apply();
+})();
+
+(function themeManager(){
+  var KEY = "tracker-theme";
+  var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function resolve(mode){
+    if (mode === "dark") return "dark";
+    if (mode === "light") return "light";
+    return (mq && mq.matches) ? "dark" : "light";
+  }
+  function applyResolved(mode){ document.documentElement.setAttribute("data-theme", resolve(mode)); }
+  window.getAppTheme = function(){ return localStorage.getItem(KEY) || "system"; };
+  window.setAppTheme = function(mode){
+    if (mode === "system") localStorage.removeItem(KEY); else localStorage.setItem(KEY, mode);
+    applyResolved(mode);
+  };
+  if (mq){
+    var onChange = function(){ if (window.getAppTheme() === "system") applyResolved("system"); };
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+  applyResolved(window.getAppTheme());
 })();

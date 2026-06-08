@@ -352,3 +352,33 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
   font-size: 11px;
   color: var(--text);
 }
+
+/* ---- Dark theme (toggled via [data-theme="dark"] on <html>) ---- */
+[data-theme="dark"] {
+  --bg: #1b1a19;
+  --bg2: #252423;
+  --bg3: #2d2c2b;
+  --bg4: #3b3a39;
+  --border: rgba(255,255,255,0.10);
+  --border2: rgba(255,255,255,0.20);
+  --text: #f3f2f1;
+  --text2: #c8c6c4;
+  --text3: #97928e;
+  --accent: #4aa3e0;
+  --accent2: #2b88d8;
+  --accent-light: #1d3344;
+  --green: #6ccb6c;
+  --green-light: #1e3320;
+  --amber: #cdbf57;
+  --amber-light: #36331a;
+  --red: #e0727b;
+  --red-light: #3a2024;
+  --purple: #b48bdd;
+  --purple-light: #2c2340;
+}
+[data-theme="dark"] .track-btn,
+[data-theme="dark"] .receive-btn {
+  background: var(--bg3);
+  color: var(--text);
+  border-color: var(--border2);
+}
