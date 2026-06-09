@@ -92,6 +92,8 @@ async function sendDailySummary() {
   const to = process.env.NOTIFY_EMAIL;
   if (!key || !to) { console.error("[summary] Missing RESEND_API_KEY or NOTIFY_EMAIL"); return; }
   const shipments = await db.getShipments();
+  const settings = await db.getSettings();
+  const company = (settings && settings.company) || {};
   const fmtET = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
   const today = fmtET(new Date());
   const recent = {};
@@ -125,6 +127,10 @@ async function sendDailySummary() {
   const dateLabel = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" }).format(new Date());
   const html =
     '<div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:8px 16px;color:#222">' +
+    '<div style="text-align:center;margin:0 0 14px">' +
+    (company.logo ? '<img src="' + (process.env.APP_URL || "https://shipment-tracker-production-010a.up.railway.app").replace(/\/+$/, "") + '/api/logo" alt="" style="max-height:64px;max-width:220px;display:inline-block">' : "") +
+    (company.name ? '<div style="font-weight:600;font-size:15px;color:#222;margin-top:6px">' + esc(company.name) + '</div>' : "") +
+    '</div>' +
     '<h2 style="margin:0 0 2px">Shipment summary</h2>' +
     '<p style="color:#888;margin:0 0 8px;font-size:13px">' + dateLabel + "</p>" +
     section("Arriving today", arriving) +

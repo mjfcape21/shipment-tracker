@@ -241,6 +241,17 @@ app.get('/api/fix-descriptions', async (req, res) => {
 });
 
 const cronSchedule = process.env.SCAN_CRON || '0 */3 * * *';
+app.get("/api/logo", async (req, res) => {
+  try {
+    const s = await db.getSettings();
+    const logo = s && s.company && s.company.logo;
+    const m = typeof logo === "string" ? logo.match(/^data:([^;]+);base64,(.+)$/) : null;
+    if (!m) return res.status(404).end();
+    res.set("Content-Type", m[1]);
+    res.set("Cache-Control", "public, max-age=300");
+    res.send(Buffer.from(m[2], "base64"));
+  } catch (e) { res.status(500).end(); }
+});
 app.get("/api/settings", async (req, res) => {
   try { res.json(await db.getSettings()); }
   catch (e) { res.status(500).json({ error: e.message }); }
