@@ -34,7 +34,7 @@ const TRACKING_PATTERNS = [
 const PO_PATTERNS = [
   /\bPO#\s+([A-Za-z0-9][A-Za-z0-9\s\-]{1,30}?)(?:\s+ORDER#|\s*$)/i,
   /\bPO\s+([0-9]+\s+[A-Za-z][A-Za-z0-9\s\-]{1,25}?)(?:\s+ORDER|\s*$)/i,
-  /\bPO#?\s*[-:]?\s*([A-Z0-9][\w\-]{2,30})/i,
+  /\bPO[#:\-\s]\s*([A-Z0-9][\w\-]{2,30})/i,
   /\bP\.O\.?\s*#?\s*([A-Z0-9][\w\-]{2,30})/i,
   /\bpurchase\s+order\s*#?\s*([A-Z0-9][\w\-]{2,30})/i,
 ];
