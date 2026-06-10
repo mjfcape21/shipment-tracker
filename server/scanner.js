@@ -184,6 +184,8 @@ async function scanAccount(account) {
 
         const subject  = getHeader(firstMsg, 'Subject');
         const sender   = getHeader(firstMsg, 'From');
+        // Skip the app's own notification emails (prevents a re-ingest feedback loop)
+        if (/shipment tracker/i.test(sender) || /resend\.dev/i.test(sender)) continue;
         const dateStr  = getHeader(lastMsg, 'Date');
         const emailDate = dateStr ? Math.floor(new Date(dateStr).getTime() / 1000) : 0;
 
