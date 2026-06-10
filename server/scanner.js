@@ -136,6 +136,13 @@ function buildOAuthClient(tokens) {
 function decodeBody(payload){if(!payload)return '';var plain='',html='';var walk=function(p){if(!p)return;if(p.body&&p.body.data){try{var txt=Buffer.from(p.body.data,'base64url').toString('utf8');if(p.mimeType==='text/plain')plain+=txt+'\n';else if(p.mimeType==='text/html')html+=txt+'\n';}catch(e){}}if(p.parts)p.parts.forEach(walk);};walk(payload);return plain||html.replace(/<[^>]+>/g,' ');}
 function extractCustomerPO(text){if(!text)return null;var m=text.match(/\b(?:customer\s+po|po\s+number)\s*[:#]?\s*([A-Za-z0-9][^\r\n]*?)(?:\s{2,}|\s+order\b|\s+ship\b|[\r\n]|$)/i);if(m&&m[1]){var v=m[1].trim();if(v.length>=2&&v.length<=40)return v;}return null;}
 
+function detectBrand(text){
+  var t = (text||'').toLowerCase();
+  var map = [ [['snapav','snapone','snap one','snap av'], 'Snap AV'] ];
+  for (var i=0;i<map.length;i++){ if (map[i][0].some(function(k){ return t.indexOf(k)>-1; })) return map[i][1]; }
+  return null;
+}
+
 async function scanAccount(account) {
   console.log(`[scanner] Scanning ${account.email}...`);
   const auth = buildOAuthClient({
@@ -187,7 +194,9 @@ async function scanAccount(account) {
         if (status === 'pending' && tracking) status = 'shipped';
         const po_number   = extractPO(subject + ' ' + allSnippets) || extractCustomerPO(allBodies);
         const eta         = extractETA(allSnippets);
-        const description = subject;
+        const _brandBody = detectBrand(allBodies);
+        const _brandFront = detectBrand(sender + ' ' + subject);
+        const description = (_brandBody && !_brandFront) ? (_brandBody + ' - ' + subject) : subject;
 
         if (carrier === 'Other' && status === 'pending' && !po_number) continue;
 
