@@ -134,7 +134,7 @@ function buildOAuthClient(tokens) {
 }
 
 function decodeBody(payload){if(!payload)return '';var plain='',html='';var walk=function(p){if(!p)return;if(p.body&&p.body.data){try{var txt=Buffer.from(p.body.data,'base64url').toString('utf8');if(p.mimeType==='text/plain')plain+=txt+'\n';else if(p.mimeType==='text/html')html+=txt+'\n';}catch(e){}}if(p.parts)p.parts.forEach(walk);};walk(payload);return plain||html.replace(/<[^>]+>/g,' ');}
-function extractCustomerPO(text){if(!text)return null;var m=text.match(/\bcustomer\s+po\s*[:#]?\s*([A-Za-z0-9][^\r\n]*?)(?:\s{2,}|\s+order\b|\s+ship\b|[\r\n]|$)/i);if(m&&m[1]){var v=m[1].trim();if(v.length>=2&&v.length<=40)return v;}return null;}
+function extractCustomerPO(text){if(!text)return null;var m=text.match(/\b(?:customer\s+po|po\s+number)\s*[:#]?\s*([A-Za-z0-9][^\r\n]*?)(?:\s{2,}|\s+order\b|\s+ship\b|[\r\n]|$)/i);if(m&&m[1]){var v=m[1].trim();if(v.length>=2&&v.length<=40)return v;}return null;}
 
 async function scanAccount(account) {
   console.log(`[scanner] Scanning ${account.email}...`);
@@ -145,7 +145,7 @@ async function scanAccount(account) {
     _email: account.email,
   });
   const gmail = google.gmail({ version: 'v1', auth });
-  const query = 'subject:(shipped OR tracking OR "out for delivery" OR "order shipped" OR "delivery notification" OR "package scheduled" OR "PO#" OR "purchase order") newer_than:90d';
+  const query = 'subject:(shipped OR tracking OR "out for delivery" OR "order shipped" OR "delivery notification" OR "package scheduled" OR shipping OR shipment OR "PO#" OR "purchase order") newer_than:90d';
   let pageToken;
   let newCount = 0;
 
@@ -180,9 +180,10 @@ async function scanAccount(account) {
         const dateStr  = getHeader(lastMsg, 'Date');
         const emailDate = dateStr ? Math.floor(new Date(dateStr).getTime() / 1000) : 0;
 
-        const carrier     = detectCarrier(sender, subject, allSnippets);
+        let carrier = detectCarrier(sender, subject, allSnippets);
+        if (carrier === 'Other') { const _c2 = detectCarrier(sender, subject, allSnippets + ' ' + allBodies); if (_c2 !== 'Other') carrier = _c2; }
         const status      = detectStatus(subject, allSnippets);
-        const tracking    = extractTracking(subject + ' ' + allSnippets);
+        const tracking    = extractTracking(subject + ' ' + allSnippets) || extractTracking(allBodies);
         const po_number   = extractPO(subject + ' ' + allSnippets) || extractCustomerPO(allBodies);
         const eta         = extractETA(allSnippets);
         const description = subject;
