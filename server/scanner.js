@@ -182,8 +182,9 @@ async function scanAccount(account) {
 
         let carrier = detectCarrier(sender, subject, allSnippets);
         if (carrier === 'Other') { const _c2 = detectCarrier(sender, subject, allSnippets + ' ' + allBodies); if (_c2 !== 'Other') carrier = _c2; }
-        const status      = detectStatus(subject, allSnippets);
+        let status = detectStatus(subject, allSnippets);
         const tracking    = extractTracking(subject + ' ' + allSnippets) || extractTracking(allBodies);
+        if (status === 'pending' && tracking) status = 'shipped';
         const po_number   = extractPO(subject + ' ' + allSnippets) || extractCustomerPO(allBodies);
         const eta         = extractETA(allSnippets);
         const description = subject;
