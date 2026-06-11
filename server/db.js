@@ -160,11 +160,11 @@ async function getStats() {
     COUNT(*) FILTER (WHERE status='transit') AS in_transit,
     COUNT(*) FILTER (WHERE status='shipped') AS shipped,
     COUNT(*) FILTER (WHERE status='pending') AS pending,
-    COUNT(*) FILTER (WHERE received=TRUE) AS received
+    COUNT(*) FILTER (WHERE received=TRUE) AS received, COUNT(*) FILTER (WHERE priority=TRUE) AS priority
     FROM shipments`);
   const row = r.rows[0];
   return { total:parseInt(row.total), delivered:parseInt(row.delivered), in_transit:parseInt(row.in_transit),
-    shipped:parseInt(row.shipped), pending:parseInt(row.pending), received:parseInt(row.received) };
+    shipped:parseInt(row.shipped), pending:parseInt(row.pending), received:parseInt(row.received), priority:parseInt(row.priority) };
 }
 
 async function addSubscription(sub) {
