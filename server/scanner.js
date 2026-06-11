@@ -64,7 +64,7 @@ function detectCarrier(sender, subject, bodyText) {
 function detectStatus(subject, snippet) {
   const text = subject + ' ' + snippet;
   if (STATUS_PATTERNS.delivered.test(text)) return 'delivered';
-  if (STATUS_PATTERNS.transit.test(text))   return 'transit';
+  if (STATUS_PATTERNS.transit.test(text))   return 'shipped';
   if (STATUS_PATTERNS.shipped.test(text))   return 'shipped';
   return 'pending';
 }
