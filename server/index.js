@@ -109,12 +109,13 @@ app.delete('/api/shipments/:id', async (req, res) => {
 
 app.patch('/api/shipments/:id', async (req, res) => {
   const id = parseInt(req.params.id);
-  const { tracking_number, po_number, order_number, description, ship_to, status, received, carrier, vendor } = req.body;
+  const { tracking_number, po_number, order_number, description, ship_to, status, received, carrier, vendor, priority } = req.body;
   const updates = { tracking_number, po_number, order_number, description, ship_to };
   if (status   !== undefined) updates.status   = status;
   if (received !== undefined) updates.received = received;
   if (carrier  !== undefined) updates.carrier  = carrier;
   if (vendor   !== undefined) updates.vendor   = vendor;
+  if (priority !== undefined) updates.priority = priority;
   const result = await db.editShipment(id, updates);
   if (!result) return res.status(404).json({ error: 'Not found' });
   res.json(result);

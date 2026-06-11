@@ -382,3 +382,15 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); min-hei
   color: var(--text);
   border-color: var(--border2);
 }
+
+/* High Priority */
+.card.priority-card{border-left-color:var(--red);border-left-width:5px;}
+.dtag.priority-tag{background:var(--red);color:#fff;}
+.flag-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer;color:var(--text3);display:inline-flex;align-items:center;line-height:1;}
+.flag-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;}
+.flag-btn:hover{color:var(--red);border-color:var(--red);}
+.flag-btn.flagged{color:#fff;background:var(--red);border-color:var(--red);}
+.flag-btn.flagged svg{fill:#fff;stroke:#fff;}
+.priority-dot{background:var(--red) !important;}
+.priority-section{margin:0 0 20px 0;}
+.priority-section-label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--red);margin:0 0 10px 4px;}

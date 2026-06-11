@@ -163,7 +163,7 @@ function getSearchQuery(){return(document.getElementById('search-input').value||
 function getFilteredGroups(){
   const q=getSearchQuery();
   let groups=[...allGroups];
-  if(currentFilter==='received')groups=groups.filter(g=>g.best.received);
+  if(currentFilter==='priority')groups=groups.filter(g=>g.best.priority);else if(currentFilter==='received')groups=groups.filter(g=>g.best.received);
   else if(currentFilter!=='all')groups=groups.filter(g=>g.best.status===currentFilter);
   if(currentVendor)groups=groups.filter(g=>g.best._vendor===currentVendor);
   if(currentCarrier)groups=groups.filter(g=>g.best.carrier===currentCarrier);
@@ -237,6 +237,17 @@ function renderProjectsView(){
 function toggleProjectCard(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'flex':'none';}
 
 // â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function togglePriority(id){
+  var idx=allShipments.findIndex(function(s){return s.id===id;});
+  if(idx<0)return;
+  var next=!allShipments[idx].priority;
+  try{
+    var updated=await api('/api/shipments/'+id,{method:'PATCH',body:{priority:next}});
+    allShipments[idx]={...allShipments[idx],...updated,_vendor:detectVendor({...allShipments[idx],...updated})};
+    allGroups=groupShipments(allShipments);
+    applyFilters();
+  }catch(e){console.error('togglePriority failed',e);}
+}
 function cardHTML(g){
   const s=g.best;
   const priority={delivered:4,transit:3,shipped:2,pending:1};
@@ -249,10 +260,10 @@ function cardHTML(g){
   const receivedBtn=!isReceived?'<button class="receive-btn" onclick="markReceived('+s.id+')">Mark received</button>':'';
   const statusLabel=isReceived?'Received':statusNames[s.status]||s.status;
   const statusClass=isReceived?'received':s.status;
-  const cardClass='card status-'+s.status+(isReceived?' received-card':'');
+  const cardClass='card status-'+s.status+(isReceived?' received-card':'')+(s.priority?' priority-card':'');
   const projId=getGroupProject(g);const proj=projId?allProjects.find(p=>p.id===projId):null;
   const tags=[];
-  if(s.ship_to)tags.push('<span class="dtag shipto-tag">To: '+esc(s.ship_to)+'</span>');
+  if(s.priority)tags.push('<span class="dtag priority-tag">High Priority</span>');if(s.ship_to)tags.push('<span class="dtag shipto-tag">To: '+esc(s.ship_to)+'</span>');
   if(proj)tags.push('<span class="dtag project-tag">'+esc(toTitle(proj.name))+'</span>');
   if(s.shipper)tags.push('<span class="dtag shipper-tag">'+esc(s.shipper)+'</span>');
   if(s._vendor)tags.push('<span class="dtag vendor-tag">'+esc(s._vendor)+'</span>');
@@ -270,7 +281,7 @@ function cardHTML(g){
     '</div>'+
     '<div class="card-right">'+
       '<span class="status-pill '+statusClass+'">'+statusLabel+'</span>'+
-      '<div class="card-actions">'+tb+receivedBtn+
+      '<div class="card-actions">'+'<button class="flag-btn'+(s.priority?' flagged':'')+'" onclick="togglePriority('+s.id+')" title="Toggle high priority"><svg viewBox="0 0 16 16"><path d="M3.5 1.5v13M3.5 2.5h8l-2 3 2 3h-8"/></svg></button>'+tb+receivedBtn+
         '<button class="edit-btn" onclick="openEditModal('+s.id+')">Edit</button>'+
         '<button class="delete-btn" onclick="deleteShipment('+s.id+')">x</button>'+
       '</div>'+
@@ -325,7 +336,7 @@ function setProjectById(id,btn){setProject(id,btn);}
 function setProject(p,btn){currentProject=p;document.querySelectorAll('#project-filters .filter-item').forEach(b=>b.classList.remove('active-project'));btn.classList.add('active-project');if(currentView==='projects')renderProjectsView();else applyFilters();}
 function setView(view,btn){currentView=view;document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('page-title').textContent=view==='projects'?'Projects':'All packages';applyFilters();}
 function setSort(s,btn){currentSort=s;document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}
-function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.filter-item[data-filter]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const titles={all:'All packages',pending:'Pending',transit:'In transit',shipped:'Shipped',delivered:'Delivered',received:'Received'};document.getElementById('page-title').textContent=titles[f]||'Packages';applyFilters();}
+function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.filter-item[data-filter]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const titles={all:'All packages',pending:'Pending',transit:'In transit',shipped:'Shipped',delivered:'Delivered',received:'Received',priority:'High Priority'};document.getElementById('page-title').textContent=titles[f]||'Packages';applyFilters();}
 
 function showAddVendor(){document.getElementById('add-vendor-form').style.display='block';document.getElementById('new-vendor-input').focus();}
 function cancelAddVendor(){document.getElementById('add-vendor-form').style.display='none';document.getElementById('new-vendor-input').value='';}
@@ -715,4 +726,24 @@ async function openSettings() {
     else if (mq.addListener) mq.addListener(onChange);
   }
   applyResolved(window.getAppTheme());
+})();
+
+/* High Priority: pin flagged shipments to the top of the calendar view */
+(function(){
+  if(typeof renderCalendar!=='function')return;
+  var orig=renderCalendar;
+  renderCalendar=function(groups){
+    var pin=groups.filter(function(g){return g.best.priority;});
+    var rest=groups.filter(function(g){return !g.best.priority;});
+    var content=document.getElementById('main-content');
+    if(rest.length){orig(rest);}
+    else if(pin.length){if(content)content.innerHTML='';}
+    else{orig(groups);return;}
+    if(pin.length&&content){
+      var sec=document.createElement('div');
+      sec.className='priority-section';
+      sec.innerHTML='<div class="priority-section-label">High Priority</div>'+pin.map(cardHTML).join('');
+      content.insertBefore(sec,content.firstChild);
+    }
+  };
 })();

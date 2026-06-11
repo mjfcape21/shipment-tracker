@@ -36,6 +36,7 @@
       <div class="section-content" id="status-section">
         <nav class="filters">
           <button class="filter-item active" data-filter="all" onclick="setFilter('all',this)"><span class="filter-dot"></span>All packages<span class="filter-count" id="count-all">-</span></button>
+          <button class="filter-item" data-filter="priority" onclick="setFilter('priority',this)"><span class="filter-dot priority-dot"></span>High Priority</button>
           <button class="filter-item" data-filter="pending" onclick="setFilter('pending',this)"><span class="filter-dot pending"></span>Pending<span class="filter-count" id="count-pending">-</span></button>
           <button class="filter-item" data-filter="transit" onclick="setFilter('transit',this)"><span class="filter-dot transit"></span>In transit<span class="filter-count" id="count-transit">-</span></button>
           <button class="filter-item" data-filter="shipped" onclick="setFilter('shipped',this)"><span class="filter-dot shipped"></span>Shipped<span class="filter-count" id="count-shipped">-</span></button>

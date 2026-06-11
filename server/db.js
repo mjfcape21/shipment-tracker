@@ -57,6 +57,7 @@ async function init() {
     auth     TEXT
   )`);
   await query('ALTER TABLE shipments ADD COLUMN IF NOT EXISTS vendor TEXT');
+  await query('ALTER TABLE shipments ADD COLUMN IF NOT EXISTS priority BOOLEAN DEFAULT FALSE');
   console.log('[db] PostgreSQL tables ready');
 }
 
@@ -124,7 +125,7 @@ async function upsertShipment(data) {
 
 async function editShipment(id, updates) {
   const fields = []; const params = [];
-  const allowed = ['tracking_number','po_number','order_number','description','ship_to','status','received','carrier','vendor'];
+  const allowed = ['tracking_number','po_number','order_number','description','ship_to','status','received','carrier','vendor','priority'];
   for (const key of allowed) {
     if (updates[key] !== undefined) { params.push(updates[key]); fields.push(key + '=$' + params.length); }
   }
