@@ -56,6 +56,7 @@ async function init() {
     p256dh   TEXT,
     auth     TEXT
   )`);
+  await query('ALTER TABLE shipments ADD COLUMN IF NOT EXISTS vendor TEXT');
   console.log('[db] PostgreSQL tables ready');
 }
 
@@ -123,7 +124,7 @@ async function upsertShipment(data) {
 
 async function editShipment(id, updates) {
   const fields = []; const params = [];
-  const allowed = ['tracking_number','po_number','order_number','description','ship_to','status','received'];
+  const allowed = ['tracking_number','po_number','order_number','description','ship_to','status','received','carrier','vendor'];
   for (const key of allowed) {
     if (updates[key] !== undefined) { params.push(updates[key]); fields.push(key + '=$' + params.length); }
   }
