@@ -138,7 +138,7 @@ function extractCustomerPO(text){if(!text)return null;var m=text.match(/\b(?:cus
 
 function detectBrand(text){
   var t = (text||'').toLowerCase();
-  var map = [ [['snapav','snapone','snap one','snap av'], 'Snap AV'] ];
+  var map = [ [['snapav','snapone','snap one','snap av'], 'Snap AV'], [['ubiquiti','unifi','uisp'], 'Ubiquiti'] ];
   for (var i=0;i<map.length;i++){ if (map[i][0].some(function(k){ return t.indexOf(k)>-1; })) return map[i][1]; }
   return null;
 }
